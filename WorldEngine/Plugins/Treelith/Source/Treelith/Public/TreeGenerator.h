@@ -6,33 +6,6 @@
 #include "GameFramework/Actor.h"
 #include "TreeGenerator.generated.h"
 
-
-UENUM(BlueprintType, Blueprintable)
-enum UTreeType : uint8
-{
-
-	OAK
-};
-
-USTRUCT(BlueprintType, Blueprintable)
-struct TREELITH_API FTreeData
-{
-	GENERATED_BODY()
-
-
-
-	UPROPERTY(BlueprintReadWrite)
-	int NumSides{ 4 };
-	
-
-};
-
-USTRUCT(BlueprintType, Blueprintable)
-struct TREELITH_API FTreeGeneratorData
-{
-	GENERATED_BODY()
-};
-
 class UProceduralMeshComponent;
 
 UCLASS(BlueprintType, Blueprintable)
