@@ -3,19 +3,19 @@
 
 #include "TreeFunctionRegistry.h"
 
-TMap<ETreeBranchDestinationType, TFunction<void(FRandomStream&, TArray<FTreeBranchDestination>&, int)>> UTreeFunctionRegistry::TreeRandomizationRegistry = TMap<ETreeBranchDestinationType, TFunction<void(FRandomStream&, TArray<FTreeBranchDestination>&, int)>>{};
+TMap<ETreeRandomType, TFunction<void(FRandomStream&, TArray<FTreeBranchLeaf>&, int)>> UTreeFunctionRegistry::TreeRandomizationRegistry = TMap<ETreeRandomType, TFunction<void(FRandomStream&, TArray<FTreeBranchLeaf>&, int)>>{};
 
 void UTreeFunctionRegistry::InitializeRegistries()
 {
 	InitializeTreeRandomizationRegistry();
 }
 
-TFunction<void(FRandomStream&, TArray<FTreeBranchDestination>&, int)>& UTreeFunctionRegistry::GetTreeRandomizationFunction(ETreeBranchDestinationType treeType)
+TFunction<void(FRandomStream&, TArray<FTreeBranchLeaf>&, int)>& UTreeFunctionRegistry::GetTreeRandomizationFunction(ETreeRandomType treeType)
 {
 	auto function{ TreeRandomizationRegistry.Find(treeType) };
 	if (!function)
 	{
-		function = TreeRandomizationRegistry.Find(ETreeBranchDestinationType::DEFAULT);
+		function = TreeRandomizationRegistry.Find(ETreeRandomType::DEFAULT);
 	}
 	return *function;
 }
@@ -27,12 +27,12 @@ void UTreeFunctionRegistry::UninitalizeRegistries()
 
 void UTreeFunctionRegistry::InitializeTreeRandomizationRegistry()
 {
-	TreeRandomizationRegistry.Add(ETreeBranchDestinationType::DEFAULT, [](FRandomStream& rand, TArray<FTreeBranchDestination>& leaves, int numberOfLeaves)
+	TreeRandomizationRegistry.Add(ETreeRandomType::DEFAULT, [](FRandomStream& rand, TArray<FTreeBranchLeaf>& leaves, int numberOfLeaves)
 		{
 			leaves.Reserve(numberOfLeaves);
 			for (int i{}; i < numberOfLeaves; ++i)
 			{
-				leaves.Add(FTreeBranchDestination{ FVector{ rand.FRandRange(-200.f, 200.f), rand.FRandRange(-200.f, 200.f), rand.FRandRange(-150.f, 600.f) }});
+				leaves.Add(FTreeBranchLeaf{ FVector{ rand.FRandRange(-200.f, 200.f), rand.FRandRange(-200.f, 200.f), rand.FRandRange(-150.f, 600.f) }});
 			}
 		}
 	);
