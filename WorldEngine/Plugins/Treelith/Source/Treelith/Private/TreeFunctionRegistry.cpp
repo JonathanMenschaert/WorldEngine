@@ -3,19 +3,19 @@
 
 #include "TreeFunctionRegistry.h"
 
-TMap<ETreeType, TFunction<void(FRandomStream&, TArray<FTreeBranchDestination>&, int)>> UTreeFunctionRegistry::TreeRandomizationRegistry = TMap<ETreeType, TFunction<void(FRandomStream&, TArray<FTreeBranchDestination>&, int)>>{};
+TMap<ETreeBranchDestinationType, TFunction<void(FRandomStream&, TArray<FTreeBranchDestination>&, int)>> UTreeFunctionRegistry::TreeRandomizationRegistry = TMap<ETreeBranchDestinationType, TFunction<void(FRandomStream&, TArray<FTreeBranchDestination>&, int)>>{};
 
 void UTreeFunctionRegistry::InitializeRegistries()
 {
 	InitializeTreeRandomizationRegistry();
 }
 
-TFunction<void(FRandomStream&, TArray<FTreeBranchDestination>&, int)>& UTreeFunctionRegistry::GetTreeRandomizationFunction(ETreeType treeType)
+TFunction<void(FRandomStream&, TArray<FTreeBranchDestination>&, int)>& UTreeFunctionRegistry::GetTreeRandomizationFunction(ETreeBranchDestinationType treeType)
 {
 	auto function{ TreeRandomizationRegistry.Find(treeType) };
 	if (!function)
 	{
-		function = TreeRandomizationRegistry.Find(ETreeType::DEFAULT);
+		function = TreeRandomizationRegistry.Find(ETreeBranchDestinationType::DEFAULT);
 	}
 	return *function;
 }
@@ -27,7 +27,7 @@ void UTreeFunctionRegistry::UninitalizeRegistries()
 
 void UTreeFunctionRegistry::InitializeTreeRandomizationRegistry()
 {
-	TreeRandomizationRegistry.Add(ETreeType::DEFAULT, [](FRandomStream& rand, TArray<FTreeBranchDestination>& leaves, int numberOfLeaves)
+	TreeRandomizationRegistry.Add(ETreeBranchDestinationType::DEFAULT, [](FRandomStream& rand, TArray<FTreeBranchDestination>& leaves, int numberOfLeaves)
 		{
 			leaves.Reserve(numberOfLeaves);
 			for (int i{}; i < numberOfLeaves; ++i)

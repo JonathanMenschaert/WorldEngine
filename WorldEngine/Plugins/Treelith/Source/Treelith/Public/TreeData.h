@@ -13,6 +13,20 @@ enum class ETreeType : uint8
 	OAK
 };
 
+UENUM(BlueprintType, Blueprintable)
+enum class ELeafType : uint8
+{
+	DEFAULT,
+	OAK
+};
+
+UENUM(BlueprintType, Blueprintable)
+enum class ETreeBranchDestinationType : uint8
+{
+	DEFAULT,
+	OAK
+};
+
 USTRUCT(BlueprintType, Blueprintable)
 struct TREELITH_API FTreeSettings
 {
