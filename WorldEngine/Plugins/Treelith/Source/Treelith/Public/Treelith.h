@@ -7,8 +7,6 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogTreelith, Log, All)
 
-class UTreeFunctionRegistry;
-
 class FTreelithModule : public IModuleInterface
 {
 public:
@@ -17,7 +15,4 @@ public:
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
 
-private:
-
-	UTreeFunctionRegistry* registry;
 };

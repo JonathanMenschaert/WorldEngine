@@ -20,6 +20,11 @@ TFunction<void(FRandomStream&, TArray<FTreeBranchDestination>&, int)>& UTreeFunc
 	return *function;
 }
 
+void UTreeFunctionRegistry::UninitalizeRegistries()
+{
+	TreeRandomizationRegistry.Empty();
+}
+
 void UTreeFunctionRegistry::InitializeTreeRandomizationRegistry()
 {
 	TreeRandomizationRegistry.Add(ETreeType::DEFAULT, [](FRandomStream& rand, TArray<FTreeBranchDestination>& leaves, int numberOfLeaves)
