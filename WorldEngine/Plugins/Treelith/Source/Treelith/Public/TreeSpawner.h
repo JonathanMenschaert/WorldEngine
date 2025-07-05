@@ -25,22 +25,52 @@ public:
 	ATreeSpawner();
 
 	UFUNCTION(BlueprintCallable)
-	void GenerateTreeSkeletonAsync(const TArray<FTreeSettings>& treeSettings);
+	void InitializeSpawner(const TArray<FTreeSettings>& treeSettings);
+
+	UFUNCTION(BlueprintCallable)
+	void GenerateTreeSkeleton();
+
+	UFUNCTION(BlueprintCallable)
+	void GenerateTreeMesh();
+
+	//Tree Skeleton Debug
+	UFUNCTION(BlueprintCallable)
+	void Debug();
 
 private:
 
+	//Tree Skeleton Generation
 	UProceduralMeshComponent* TreeMesh;
 	TArray<FTreeSettings> TreeSettings;
 	FRandomStream Seed;
 
-	//Tree Skeleton Generation
 
 	void GenerateTreeSkeleton(const FTreeSettings& currentSettings, FTreeSkeleton& currentTreeSkeleton);
 	void GrowTreeSkeleton(const FTreeSettings& currentSettings, FTreeSkeleton& currentTreeSkeleton, int maxIterations);
 	
 	//Tree Mesh generation
 
+	UPROPERTY(EditAnywhere)
+	TArray<FVector> Vertices;
 
-	void Debug();
+	UPROPERTY(EditAnywhere)
+	TArray<int> Triangles;
+
+	UPROPERTY(EditAnywhere)
+	TArray<FVector2D> UV0;
+
+	UPROPERTY(EditAnywhere)
+	TArray<FVector2D> UV1;
+
+	UPROPERTY(EditAnywhere)
+	UMaterialInterface* BarkMaterial;
+
+	UPROPERTY(EditAnywhere)
+	UMaterialInterface* LeafMaterial;
+
+	void GenerateNextBranchMesh(const FTreeSettings& currentSettings, int currentTreeIdx, const FTreeBranch& currentBranch,int attachOffset = -1);
+	void GenerateNextBranchRing(const FTreeSettings& currentSettings, const FTreeBranch& currentBranch, const FVector& upVector, float minRingRadius, int prevRingOffset, int currentRingOffset);
+	void GenerateBranchCap(const FTreeSettings& currentSettings, const FVector& position, int capStartOffset, bool copyRing);
+	
 
 };

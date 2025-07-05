@@ -41,7 +41,7 @@ struct TREELITH_API FTreeSettings
 	int BranchDestinationAmount{ 20 };
 
 	UPROPERTY(BlueprintReadWrite)
-	float MinBranchLength{ 0.f };
+	float MinBranchLength{ 50.f };
 
 	UPROPERTY(BlueprintReadWrite)
 	float MaxBranchLength{ 100.f };
@@ -98,10 +98,12 @@ struct TREELITH_API FTreeBranch
 	int ParentIdx{ -1 };
 	TArray<int> ChildIdxs{};
 
-	float BranchSize{ 6.f }; 
+	float BranchSize{ 6.f };
 	float BranchLength{ 100.f };
 
 	bool ShouldCreateNext{ false };
+
+	int ParentVertexStart{ -1 };
 
 	FTreeBranch();
 
