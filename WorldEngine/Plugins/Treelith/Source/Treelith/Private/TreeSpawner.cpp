@@ -70,9 +70,12 @@ void ATreeSpawner::GenerateTreeSkeleton(const FTreeSettings& currentSettings, FT
 	root.Position = currentSettings.Position;
 	root.NextDir = root.BranchDir;
 	root.ParentIdx = -1;
-	currentTreeSkeleton.Branches.Add(root);
 
-	FTreeBranch& currentBranch{ currentTreeSkeleton.Branches.Last()};
+
+	auto& currentBranches{ currentTreeSkeleton.Branches };
+	currentBranches.Add(root);
+
+	int currentBranchIdx{ currentBranches.Num() - 1 };
 	bool foundLeaf{ false };
 
 	while (!foundLeaf)
@@ -80,7 +83,7 @@ void ATreeSpawner::GenerateTreeSkeleton(const FTreeSettings& currentSettings, FT
 		UE_LOG(LogTreelith, Log, TEXT("Trunk Growing..."));
 		for (FTreeBranchLeaf& leaf : currentTreeSkeleton.Leaves)
 		{
-			float d = FVector::Distance(currentBranch.Position, leaf.Position);
+			float d = FVector::Distance(currentBranches[currentBranchIdx].Position, leaf.Position);
 			if (d < currentSettings.MaxLeafDistance)
 			{
 				foundLeaf = true;
@@ -88,9 +91,8 @@ void ATreeSpawner::GenerateTreeSkeleton(const FTreeSettings& currentSettings, FT
 		}
 		if (!foundLeaf)
 		{
-			//this is causing strange behavior. The root is getting replaced with whatever value that comes out of this in some cases. 
-			currentBranch.Next(currentTreeSkeleton.Branches, Seed.FRandRange(currentSettings.MinBranchLength, currentSettings.MaxBranchLength), currentTreeSkeleton.Branches.Num());
-			currentBranch = currentTreeSkeleton.Branches[currentTreeSkeleton.Branches.Num() - 1];
+			currentBranches[currentBranchIdx].Next(currentBranches, Seed.FRandRange(currentSettings.MinBranchLength, currentSettings.MaxBranchLength), currentBranches.Num());
+			currentBranchIdx = currentBranches.Num() - 1;
 		}
 	}
 
