@@ -94,10 +94,16 @@ struct TREELITH_API FTreeBranch
 	UPROPERTY(EditAnywhere)
 	FVector NextDir{};
 
+	UPROPERTY(EditAnywhere)
 	int CurrentIdx{ 0 };
+
+	UPROPERTY(EditAnywhere)
 	int ParentIdx{ -1 };
+
+	UPROPERTY(EditAnywhere)
 	TArray<int> ChildIdxs{};
 
+	UPROPERTY(EditAnywhere)
 	float BranchSize{ 6.f };
 	float BranchLength{ 100.f };
 
@@ -125,7 +131,8 @@ struct TREELITH_API FTreeSkeleton
 	UPROPERTY(EditAnywhere)
 	TArray<FTreeBranchLeaf> Leaves;
 
-
+	UPROPERTY(EditAnywhere)
+	TArray<int> EndBranches;
 	
 };
 

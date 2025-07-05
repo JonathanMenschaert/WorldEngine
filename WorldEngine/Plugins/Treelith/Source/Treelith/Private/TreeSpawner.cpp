@@ -16,11 +16,11 @@ ATreeSpawner::ATreeSpawner()
 	TreeMesh->SetupAttachment(GetRootComponent());
 }
 
-void ATreeSpawner::InitializeSpawner(const TArray<FTreeSettings>& treeSettings)
+void ATreeSpawner::InitializeSpawner(int seed, const TArray<FTreeSettings>& treeSettings)
 {
 	TreeSettings = treeSettings;
 	Trees.AddDefaulted(treeSettings.Num());
-	Seed.Initialize(50);
+	Seed.Initialize(seed);
 }
 
 // Called when the game starts or when spawned
@@ -34,6 +34,7 @@ void ATreeSpawner::GenerateTreeSkeleton()
 	for (int i{}; i < TreeSettings.Num(); ++i)
 	{
 		GenerateTreeSkeleton(TreeSettings[i], Trees[i]);
+		FinalizeTreeSkeleton(Trees[i]);
 	}
 }
 
@@ -68,6 +69,7 @@ void ATreeSpawner::GenerateTreeSkeleton(const FTreeSettings& currentSettings, FT
 
 	root.Position = currentSettings.Position;
 	root.NextDir = root.BranchDir;
+	root.ParentIdx = -1;
 	currentTreeSkeleton.Branches.Add(root);
 
 	FTreeBranch& currentBranch{ currentTreeSkeleton.Branches.Last()};
@@ -86,8 +88,9 @@ void ATreeSpawner::GenerateTreeSkeleton(const FTreeSettings& currentSettings, FT
 		}
 		if (!foundLeaf)
 		{
+			//this is causing strange behavior. The root is getting replaced with whatever value that comes out of this in some cases. 
 			currentBranch.Next(currentTreeSkeleton.Branches, Seed.FRandRange(currentSettings.MinBranchLength, currentSettings.MaxBranchLength), currentTreeSkeleton.Branches.Num());
-			currentBranch = currentTreeSkeleton.Branches.Last();
+			currentBranch = currentTreeSkeleton.Branches[currentTreeSkeleton.Branches.Num() - 1];
 		}
 	}
 
@@ -148,6 +151,27 @@ void ATreeSpawner::GrowTreeSkeleton(const FTreeSettings& currentSettings, FTreeS
 	}
 
 	GrowTreeSkeleton(currentSettings, currentTreeSkeleton, maxIterations - 1);
+}
+
+void ATreeSpawner::FinalizeTreeSkeleton(FTreeSkeleton& currentTreeSkeleton)
+{
+	for (FTreeBranch& branch : currentTreeSkeleton.Branches)
+	{
+		if (branch.ChildIdxs.Num() == 0)
+		{
+			currentTreeSkeleton.EndBranches.Add(branch.CurrentIdx);
+			IncrementBranchSizeAndPropagate(currentTreeSkeleton, branch);
+		}
+	}
+}
+
+void ATreeSpawner::IncrementBranchSizeAndPropagate(FTreeSkeleton& currentTreeSkeleton, FTreeBranch& currentBranch, int size)
+{
+	currentBranch.BranchSize += size;
+	if (currentBranch.ParentIdx >= 0)
+	{
+		IncrementBranchSizeAndPropagate(currentTreeSkeleton, currentTreeSkeleton.Branches[currentBranch.ParentIdx], size);
+	}
 }
 
 void ATreeSpawner::GenerateNextBranchMesh(const FTreeSettings& currentSettings, int currentTreeIdx, const FTreeBranch& currentBranch, int attachOffset)
@@ -213,13 +237,12 @@ void ATreeSpawner::GenerateNextBranchRing(const FTreeSettings& currentSettings, 
 {
 	Vertices.AddDefaulted(currentSettings.NumSides);
 
-	FQuat branchRotator{ FVector::RightVector, 0.f };
+	FQuat branchRotator{FQuat::Identity};
 
 	if (FMath::Abs(upVector.Z) < 0.9999f)
 	{
 		FVector rotationAxis = FVector::CrossProduct(FVector::UpVector, upVector).GetSafeNormal();
-		float dotAngle{ static_cast<float>(FVector::DotProduct(FVector::UpVector, upVector)) };
-		float angleOffset = FMath::Atan2(rotationAxis.Length(), dotAngle);
+		float angleOffset	= FQuat::FindBetweenNormals(FVector::UpVector, upVector).GetAngle();
 
 		branchRotator = FQuat{ rotationAxis, angleOffset };
 	}
@@ -277,6 +300,7 @@ void ATreeSpawner::GenerateBranchCap(const FTreeSettings& currentSettings, const
 		Triangles.Add(vert1); Triangles.Add(vert0); Triangles.Add(capVert);
 	}
 }
+
 
 void ATreeSpawner::Debug()
 {
