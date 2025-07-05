@@ -3,14 +3,14 @@
 
 #include "TreeFunctionRegistry.h"
 
-TMap<ETreeRandomType, TFunction<void(FRandomStream&, TArray<FTreeBranchLeaf>&, int)>> UTreeFunctionRegistry::TreeRandomizationRegistry = TMap<ETreeRandomType, TFunction<void(FRandomStream&, TArray<FTreeBranchLeaf>&, int)>>{};
+TMap<ETreeRandomType, TFunction<void(FRandomStream&, TArray<FTreeBranchLeaf>&, FVector&, int)>> UTreeFunctionRegistry::TreeRandomizationRegistry = TMap<ETreeRandomType, TFunction<void(FRandomStream&, TArray<FTreeBranchLeaf>&, FVector&, int)>>{};
 
 void UTreeFunctionRegistry::InitializeRegistries()
 {
 	InitializeTreeRandomizationRegistry();
 }
 
-TFunction<void(FRandomStream&, TArray<FTreeBranchLeaf>&, int)>& UTreeFunctionRegistry::GetTreeRandomizationFunction(ETreeRandomType treeType)
+TFunction<void(FRandomStream&, TArray<FTreeBranchLeaf>&, FVector&, int)>& UTreeFunctionRegistry::GetTreeRandomizationFunction(ETreeRandomType treeType)
 {
 	auto function{ TreeRandomizationRegistry.Find(treeType) };
 	if (!function)
@@ -27,13 +27,16 @@ void UTreeFunctionRegistry::UninitalizeRegistries()
 
 void UTreeFunctionRegistry::InitializeTreeRandomizationRegistry()
 {
-	TreeRandomizationRegistry.Add(ETreeRandomType::DEFAULT, [](FRandomStream& rand, TArray<FTreeBranchLeaf>& leaves, int numberOfLeaves)
+	TreeRandomizationRegistry.Add(ETreeRandomType::DEFAULT, [](FRandomStream& rand, TArray<FTreeBranchLeaf>& leaves, FVector& rootDirection, int numberOfLeaves)
 		{
 			leaves.Reserve(numberOfLeaves);
 			for (int i{}; i < numberOfLeaves; ++i)
 			{
-				leaves.Add(FTreeBranchLeaf{ FVector{ rand.FRandRange(-200.f, 200.f), rand.FRandRange(-200.f, 200.f), rand.FRandRange(-150.f, 600.f) }});
+				FVector leafPos{ FVector{ rand.FRandRange(-200.f, 200.f), rand.FRandRange(-200.f, 200.f), rand.FRandRange(150.f, 600.f)} };
+				leaves.Add(FTreeBranchLeaf{leafPos});
+				rootDirection += leafPos;
 			}
+			rootDirection.Normalize();
 		}
 	);
 }

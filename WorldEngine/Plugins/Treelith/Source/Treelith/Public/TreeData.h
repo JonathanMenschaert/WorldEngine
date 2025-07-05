@@ -85,13 +85,45 @@ struct TREELITH_API FTreeBranch
 {
 	GENERATED_BODY()
 
+	UPROPERTY(EditAnywhere)
 	FVector Position{};
+
+	UPROPERTY(EditAnywhere)
 	FVector BranchDir{ 0.f, 0.f, 1.f };
 
+	UPROPERTY(EditAnywhere)
 	FVector NextDir{};
 
+	int CurrentIdx{ 0 };
 	int ParentIdx{ -1 };
 	TArray<int> ChildIdxs{};
 
-	float BranchSize{ 6.f };
+	float BranchSize{ 6.f }; 
+	float BranchLength{ 100.f };
+
+	bool ShouldCreateNext{ false };
+
+	FTreeBranch();
+
+	FTreeBranch(int currentIdx, int parentIdx, float currentBranchLength, const FVector& position, const FVector& direction);
+
+	void Next(TArray<FTreeBranch>& branchList, float currentBranchLength, int nextIdx);
+
+	void AddDirection(const FVector& newDir);
 };
+
+USTRUCT(BlueprintType, Blueprintable)
+struct TREELITH_API FTreeSkeleton
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere)
+	TArray<FTreeBranch> Branches;
+
+	UPROPERTY(EditAnywhere)
+	TArray<FTreeBranchLeaf> Leaves;
+
+
+	
+};
+

@@ -19,16 +19,13 @@ protected:
 	virtual void BeginPlay() override;
 
 	UPROPERTY(EditAnywhere)
-	TArray<FTreeBranch> Branches; //Move this back down to private after testing
-
-	UPROPERTY(EditAnywhere)
-	TArray<FTreeBranchLeaf> Leaves;
+	TArray<FTreeSkeleton> Trees;
 public:
 	// Sets default values for this actor's properties
 	ATreeSpawner();
 
 	UFUNCTION(BlueprintCallable)
-	void GenerateAsync(const TArray<FTreeSettings>& treeSettings);
+	void GenerateTreeSkeletonAsync(const TArray<FTreeSettings>& treeSettings);
 
 private:
 
@@ -38,11 +35,12 @@ private:
 
 	//Tree Skeleton Generation
 
-	void GenerateTreeSkeleton(const FTreeSettings& currentSettings);
+	void GenerateTreeSkeleton(const FTreeSettings& currentSettings, FTreeSkeleton& currentTreeSkeleton);
+	void GrowTreeSkeleton(const FTreeSettings& currentSettings, FTreeSkeleton& currentTreeSkeleton, int maxIterations);
 	
 	//Tree Mesh generation
 
 
-
+	void Debug();
 
 };
