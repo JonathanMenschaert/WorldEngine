@@ -34,7 +34,7 @@ void UTreeFunctionRegistry::InitializeTreeRandomizationRegistry()
 			{
 				FVector leafPos{ FVector{ rand.FRandRange(-200.f, 200.f), rand.FRandRange(-200.f, 200.f), rand.FRandRange(150.f, 600.f)} + position };
 				leaves.Add(FTreeBranchLeaf{leafPos});
-				rootDirection += leafPos;
+				rootDirection += (leafPos - position);
 			}
 			rootDirection.Normalize();
 		}

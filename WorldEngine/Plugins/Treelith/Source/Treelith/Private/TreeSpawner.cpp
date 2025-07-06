@@ -35,7 +35,7 @@ void ATreeSpawner::GenerateTreeSkeleton()
 	for (int i{}; i < TreeSettings.Num(); ++i)
 	{
 		GenerateTreeSkeleton(TreeSettings[i], Trees[i]);
-		FinalizeTreeSkeleton(Trees[i]);
+		FinalizeTreeSkeleton(TreeSettings[i].TreeSpawnerData, Trees[i]);
 	}
 }
 
@@ -64,14 +64,13 @@ void ATreeSpawner::GenerateTreeSkeleton(const FTreeSettings& currentSettings, FT
 	auto spawnerData{ currentSettings.TreeSpawnerData };
 
 	currentTreeSkeleton.Branches.Reserve(spawnerData->BranchDestinationAmount);
+
+	int branchRadiusOffsetIdx{ spawnerData->RootShapes.Num() > 0 ? Seed.RandRange(0, spawnerData->RootShapes.Num() - 1) : -1 };
+	FTreeBranch root{0, -1, static_cast<float>(Seed.FRandRange(20.f, 25.f)), currentSettings.Position, FVector::UpVector, branchRadiusOffsetIdx};
+
 	auto& randomizeBranchLeaf = UTreeFunctionRegistry::GetTreeRandomizationFunction(spawnerData->RandomType);
-
-	FTreeBranch root{};
 	randomizeBranchLeaf(Seed, currentTreeSkeleton.Leaves, currentSettings.Position, root.BranchDir, spawnerData->BranchDestinationAmount);
-
-	root.Position = currentSettings.Position;
 	root.NextDir = root.BranchDir;
-	root.ParentIdx = -1;
 
 
 	auto& currentBranches{ currentTreeSkeleton.Branches };
@@ -93,7 +92,8 @@ void ATreeSpawner::GenerateTreeSkeleton(const FTreeSettings& currentSettings, FT
 		}
 		if (!foundLeaf)
 		{
-			currentBranches[currentBranchIdx].Next(currentBranches, Seed.FRandRange(spawnerData->MinBranchLength, spawnerData->MaxBranchLength), currentBranches.Num());
+			branchRadiusOffsetIdx = spawnerData->BranchShapes.Num() > 0 ? Seed.RandRange(0, spawnerData->BranchShapes.Num() - 1) : -1;
+			currentBranches[currentBranchIdx].Next(currentBranches, Seed.FRandRange(spawnerData->MinBranchLength, spawnerData->MaxBranchLength), currentBranches.Num(), Seed.RandRange(0, spawnerData->BranchShapes.Num() - 1));
 			currentBranchIdx = currentBranches.Num() - 1;
 		}
 	}
@@ -150,17 +150,19 @@ void ATreeSpawner::GrowTreeSkeleton(const UTreeSpawnerData* currentSettings, FTr
 		auto& branch{ currentTreeSkeleton.Branches[i] };
 		if (branch.ShouldCreateNext)
 		{
-			branch.Next(currentTreeSkeleton.Branches, Seed.FRandRange(currentSettings->MinBranchLength, currentSettings->MaxBranchLength), currentTreeSkeleton.Branches.Num());
+			int branchRadiusOffsetIdx{ currentSettings->BranchShapes.Num() > 0 ? Seed.RandRange(0, currentSettings->BranchShapes.Num() - 1) : -1 };
+			branch.Next(currentTreeSkeleton.Branches, Seed.FRandRange(currentSettings->MinBranchLength, currentSettings->MaxBranchLength), currentTreeSkeleton.Branches.Num(), branchRadiusOffsetIdx);
 		}
 	}
 
 	GrowTreeSkeleton(currentSettings, currentTreeSkeleton, maxIterations - 1);
 }
 
-void ATreeSpawner::FinalizeTreeSkeleton(FTreeSkeleton& currentTreeSkeleton)
+void ATreeSpawner::FinalizeTreeSkeleton(const UTreeSpawnerData* currentSettings, FTreeSkeleton& currentTreeSkeleton)
 {
 	for (FTreeBranch& branch : currentTreeSkeleton.Branches)
 	{
+		branch.BranchSize += currentSettings->MinBranchRadius;
 		if (branch.ChildIdxs.Num() == 0)
 		{
 			currentTreeSkeleton.EndBranches.Add(branch.CurrentIdx);
@@ -246,19 +248,36 @@ void ATreeSpawner::GenerateNextBranchRing(const UTreeSpawnerData* currentSetting
 	if (FMath::Abs(upVector.Z) < 0.9999f)
 	{
 		FVector rotationAxis = FVector::CrossProduct(FVector::UpVector, upVector).GetSafeNormal();
-		float angleOffset	= FQuat::FindBetweenNormals(FVector::UpVector, upVector).GetAngle();
+		float angleOffset = FQuat::FindBetweenNormals(FVector::UpVector, upVector).GetAngle();
 
 		branchRotator = FQuat{ rotationAxis, angleOffset };
 	}
 
 	int numSides{ currentSettings->NumSides };
+	float radiusOffsetMultiplier{ 0.f };
+	UCurveFloat* radiusOffsetCurve{ nullptr };
+	if (currentBranch.BranchShapeIdx >= 0)
+	{
+		if (currentBranch.ParentIdx >= 0)
+		{
+			radiusOffsetCurve = currentSettings->BranchShapes[currentBranch.BranchShapeIdx];
+			radiusOffsetMultiplier = currentSettings->BranchShapeMultiplier;
+		}
+		else
+		{
+			radiusOffsetCurve = currentSettings->RootShapes[currentBranch.BranchShapeIdx];
+			radiusOffsetMultiplier = currentSettings->RootShapeMultiplier;
+		}
+	}
 
 	for (int i{}; i < numSides; ++i)
 	{
 		float angle{ TWO_PI * i / numSides };
 
 		FQuat vertexRotator = FQuat{ FVector::UpVector, angle };
-		FVector nextVert = vertexRotator.RotateVector(FVector::RightVector * minRingRadius);
+		float additionalDistance = radiusOffsetCurve ? radiusOffsetCurve->GetFloatValue(angle) : 0.f;
+
+		FVector nextVert = vertexRotator.RotateVector(FVector::RightVector * (minRingRadius + additionalDistance * radiusOffsetMultiplier));
 		nextVert = branchRotator.RotateVector(nextVert) + currentBranch.Position;
 		Vertices[currentRingOffset + i] = nextVert;
 

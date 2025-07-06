@@ -62,18 +62,21 @@ struct TREELITH_API FTreeBranch
 	TArray<int> ChildIdxs{};
 
 	UPROPERTY(EditAnywhere)
-	float BranchSize{ 6.f };
+	float BranchSize{ 0.f };
+
 	float BranchLength{ 100.f };
 
 	bool ShouldCreateNext{ false };
 
 	int ParentVertexStart{ -1 };
 
+	int BranchShapeIdx{ -1 };
+
 	FTreeBranch();
 
-	FTreeBranch(int currentIdx, int parentIdx, float currentBranchLength, const FVector& position, const FVector& direction);
+	FTreeBranch(int currentIdx, int parentIdx, float currentBranchLength, const FVector& position, const FVector& direction, int branchShapeIdx);
 
-	void Next(TArray<FTreeBranch>& branchList, float currentBranchLength, int nextIdx);
+	void Next(TArray<FTreeBranch>& branchList, float currentBranchLength, int nextIdx, int branchShapeIdx);
 
 	void AddDirection(const FVector& newDir);
 };

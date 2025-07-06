@@ -9,17 +9,19 @@ FTreeBranch::FTreeBranch()
 {
 }
 
-FTreeBranch::FTreeBranch(int currentIdx, int parentIdx, float currentBranchLength, const FVector& position, const FVector& direction)
+
+FTreeBranch::FTreeBranch(int currentIdx, int parentIdx, float currentBranchLength, const FVector& position, const FVector& direction, int branchShapeIdx)
 	: CurrentIdx{currentIdx}
 	, ParentIdx{ parentIdx }
 	, Position{ position }
 	, BranchDir{ direction }
 	, NextDir{ direction }
 	, BranchLength{currentBranchLength}
+	, BranchShapeIdx{branchShapeIdx}
 {
 }
 
-void FTreeBranch::Next(TArray<FTreeBranch>& branchList, float nextBranchLength, int nextIdx)
+void FTreeBranch::Next(TArray<FTreeBranch>& branchList, float nextBranchLength, int nextIdx, int branchShapeIdx)
 {
 	NextDir.Normalize();
 	float dotAngle{ static_cast<float>(FVector::DotProduct(BranchDir, NextDir)) };
@@ -30,7 +32,7 @@ void FTreeBranch::Next(TArray<FTreeBranch>& branchList, float nextBranchLength, 
 
 	FVector nextPos = Position + NextDir * nextBranchLength;
 
-	FTreeBranch nextBranch{nextIdx, CurrentIdx, nextBranchLength, nextPos, NextDir};
+	FTreeBranch nextBranch{nextIdx, CurrentIdx, nextBranchLength, nextPos, NextDir, branchShapeIdx};
 
 	branchList.Emplace(nextBranch);
 	ChildIdxs.Add(nextIdx);

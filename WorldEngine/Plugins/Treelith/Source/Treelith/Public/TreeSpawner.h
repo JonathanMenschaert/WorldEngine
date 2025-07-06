@@ -48,7 +48,7 @@ private:
 
 	void GenerateTreeSkeleton(const FTreeSettings& currentSettings, FTreeSkeleton& currentTreeSkeleton);
 	void GrowTreeSkeleton(const UTreeSpawnerData* currentSettings, FTreeSkeleton& currentTreeSkeleton, int maxIterations);
-	void FinalizeTreeSkeleton(FTreeSkeleton& currentTreeSkeleton);
+	void FinalizeTreeSkeleton(const UTreeSpawnerData* currentSettings, FTreeSkeleton& currentTreeSkeleton);
 	void IncrementBranchSizeAndPropagate(FTreeSkeleton& currentTreeSkeleton, FTreeBranch& currentBranch, int size = 2);
 	
 	//Tree Mesh generation

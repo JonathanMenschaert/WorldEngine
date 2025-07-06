@@ -51,10 +51,19 @@ public:
 	int NumLeavesPerBranch{ 10 };
 
 	UPROPERTY(EditAnywhere)
+	float MinBranchRadius{ 6.f };
+
+	UPROPERTY(EditAnywhere)
 	TArray<UCurveFloat*> BranchShapes;
 
 	UPROPERTY(EditAnywhere)
+	float BranchShapeMultiplier{ 6.f };
+
+	UPROPERTY(EditAnywhere)
 	TArray<UCurveFloat*> RootShapes;
+
+	UPROPERTY(EditAnywhere)
+	float RootShapeMultiplier{ 6.f };
 	
 };
 
