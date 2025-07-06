@@ -62,23 +62,25 @@ void ATreeSpawner::GenerateTreeMesh()
 void ATreeSpawner::GenerateTreeSkeleton(const FTreeSettings& currentSettings, FTreeSkeleton& currentTreeSkeleton)
 {
 	auto spawnerData{ currentSettings.TreeSpawnerData };
-
 	currentTreeSkeleton.Branches.Reserve(spawnerData->BranchDestinationAmount);
 
+	//set up root branch
 	int branchRadiusOffsetIdx{ spawnerData->RootShapes.Num() > 0 ? Seed.RandRange(0, spawnerData->RootShapes.Num() - 1) : -1 };
 	FTreeBranch root{0, -1, static_cast<float>(Seed.FRandRange(20.f, 25.f)), currentSettings.Position, FVector::UpVector, branchRadiusOffsetIdx};
 
+	//Grab correct randomizer function from the registry and update root
 	auto& randomizeBranchLeaf = UTreeFunctionRegistry::GetTreeRandomizationFunction(spawnerData->RandomType);
 	randomizeBranchLeaf(Seed, currentTreeSkeleton.Leaves, currentSettings.Position, root.BranchDir, spawnerData->BranchDestinationAmount);
 	root.NextDir = root.BranchDir;
 
-
+	//Generate trunk
 	auto& currentBranches{ currentTreeSkeleton.Branches };
 	currentBranches.Add(root);
 
 	int currentBranchIdx{ currentBranches.Num() - 1 };
 	bool foundLeaf{ false };
 
+	//Continue to grow until a leaf comes within distance
 	while (!foundLeaf)
 	{
 		UE_LOG(LogTreelith, Log, TEXT("Trunk Growing..."));
@@ -98,6 +100,7 @@ void ATreeSpawner::GenerateTreeSkeleton(const FTreeSettings& currentSettings, FT
 		}
 	}
 
+	//Start growing branches
 	GrowTreeSkeleton(spawnerData, currentTreeSkeleton, spawnerData->GrowIterations);
 }
 
@@ -112,6 +115,7 @@ void ATreeSpawner::GrowTreeSkeleton(const UTreeSpawnerData* currentSettings, FTr
 	UE_LOG(LogTreelith, Log, TEXT("Branch Growing..."));
 	int closestBranchIdx{-1};
 
+	//Check what leaves are in distance of the branches
 	for (auto& leaf : currentTreeSkeleton.Leaves)
 	{
 		int maxDistance{ INT32_MAX };
@@ -133,7 +137,8 @@ void ATreeSpawner::GrowTreeSkeleton(const UTreeSpawnerData* currentSettings, FTr
 				maxDistance = d;
 			}
 		}
-
+		
+		//If a branch is found, add the normalized direction to the leaf.
 		if (closestBranchIdx >= 0)
 		{
 			FTreeBranch& currentBranch{ currentTreeSkeleton.Branches[closestBranchIdx] };
@@ -143,8 +148,10 @@ void ATreeSpawner::GrowTreeSkeleton(const UTreeSpawnerData* currentSettings, FTr
 		}
 	}
 
+	//Remove all leaves that have a branch near, indicated by the IsReached variable
 	currentTreeSkeleton.Leaves.RemoveAll([&](FTreeBranchLeaf& leaf) {return leaf.IsReached; });
 
+	//Loop over branches and create a child branch to the branches that have a leaf near them
 	for (int i{ currentTreeSkeleton.Branches.Num() - 1 }; i >= 0; --i)
 	{
 		auto& branch{ currentTreeSkeleton.Branches[i] };
@@ -160,9 +167,12 @@ void ATreeSpawner::GrowTreeSkeleton(const UTreeSpawnerData* currentSettings, FTr
 
 void ATreeSpawner::FinalizeTreeSkeleton(const UTreeSpawnerData* currentSettings, FTreeSkeleton& currentTreeSkeleton)
 {
+	//Loop over all branches to add the correct sizing to the trunk and branches.
 	for (FTreeBranch& branch : currentTreeSkeleton.Branches)
 	{
 		branch.BranchSize += currentSettings->MinBranchRadius;
+
+		//Branches with no child branches are added to a separate array to add the leaf foliage to in the mesh generation stage
 		if (branch.ChildIdxs.Num() == 0)
 		{
 			currentTreeSkeleton.EndBranches.Add(branch.CurrentIdx);
@@ -176,6 +186,7 @@ void ATreeSpawner::IncrementBranchSizeAndPropagate(FTreeSkeleton& currentTreeSke
 	currentBranch.BranchSize += size;
 	if (currentBranch.ParentIdx >= 0)
 	{
+		//Propagate the size down to the trunk, this way the tree looks better
 		IncrementBranchSizeAndPropagate(currentTreeSkeleton, currentTreeSkeleton.Branches[currentBranch.ParentIdx], size);
 	}
 }
@@ -186,6 +197,8 @@ void ATreeSpawner::GenerateNextBranchMesh(const UTreeSpawnerData* currentSetting
 
 	if (currentBranch.ChildIdxs.Num() > 0)
 	{
+
+		//One child branch is chosen to continue the trunk, the childbranch with the closest branchdir to the currentbranch is picked to avoid too sudden twists in the tree
 		int closestBranchIdx{ -1 };
 		float closestBranchVal{ 100000.f };
 		for (int currentChildIdx : currentBranch.ChildIdxs)
@@ -205,6 +218,11 @@ void ATreeSpawner::GenerateNextBranchMesh(const UTreeSpawnerData* currentSetting
 		FTreeBranch& closestBranch{ Trees[currentTreeIdx].Branches[closestBranchIdx] };
 		closestBranch.ParentVertexStart = nextOffset;
 
+
+		//Before the vertex ring is generated, both the size of the tree and the branchdirection are averaged to ensure:
+		//- the branch doesn't look squished when connected to the next branch
+		//- the tree doesn't have sudden increases or decreases in circumference
+		//Exception to this is the root of the tree, as those factors are decided at the start of the algorithm
 		float avgSize{ currentBranch.BranchSize };
 		FVector avgBranchDir{currentBranch.BranchDir};
 
@@ -223,6 +241,7 @@ void ATreeSpawner::GenerateNextBranchMesh(const UTreeSpawnerData* currentSetting
 		{
 			FTreeBranch& childBranch{ Trees[currentTreeIdx].Branches[currentChildIdx] };
 
+			//childbranches that don't continue the trunk are given a separate vertex ring to connect to 
 			if (childBranch.ParentVertexStart < 0)
 			{
 				childBranch.ParentVertexStart = Vertices.Num();
@@ -234,6 +253,7 @@ void ATreeSpawner::GenerateNextBranchMesh(const UTreeSpawnerData* currentSetting
 	}
 	else
 	{
+		//if a branch has no child, a final ring is made, which is then closed off by a cap.
 		GenerateNextBranchRing(currentSettings, currentBranch, currentBranch.BranchDir, currentBranch.BranchSize / 2.f, attachOffset, nextOffset);
 		GenerateBranchCap(currentSettings, currentBranch.Position, nextOffset, true);
 	}
@@ -245,6 +265,7 @@ void ATreeSpawner::GenerateNextBranchRing(const UTreeSpawnerData* currentSetting
 
 	FQuat branchRotator{FQuat::Identity};
 
+	//If the branchdirection and the world upvector are different enough, a quaternion is prepared to correctly rotate the vertex ring
 	if (FMath::Abs(upVector.Z) < 0.9999f)
 	{
 		FVector rotationAxis = FVector::CrossProduct(FVector::UpVector, upVector).GetSafeNormal();
@@ -253,7 +274,7 @@ void ATreeSpawner::GenerateNextBranchRing(const UTreeSpawnerData* currentSetting
 		branchRotator = FQuat{ rotationAxis, angleOffset };
 	}
 
-	int numSides{ currentSettings->NumSides };
+	//Retrieve the branch shapes from the spawner data, if possible
 	float radiusOffsetMultiplier{ 0.f };
 	UCurveFloat* radiusOffsetCurve{ nullptr };
 	if (currentBranch.BranchShapeIdx >= 0)
@@ -270,6 +291,8 @@ void ATreeSpawner::GenerateNextBranchRing(const UTreeSpawnerData* currentSetting
 		}
 	}
 
+
+	int numSides{ currentSettings->NumSides };
 	for (int i{}; i < numSides; ++i)
 	{
 		float angle{ TWO_PI * i / numSides };
@@ -284,6 +307,7 @@ void ATreeSpawner::GenerateNextBranchRing(const UTreeSpawnerData* currentSetting
 		//outUVs[nextRingOffset + i] = FVector2D{ 1.f / numSides * i, 0.f };
 	}
 
+	//If there is no mesh to generate, return
 	if (prevRingOffset < 0) return;
 
 	for (int i{}; i < numSides; ++i)
@@ -304,6 +328,9 @@ void ATreeSpawner::GenerateNextBranchRing(const UTreeSpawnerData* currentSetting
 void ATreeSpawner::GenerateBranchCap(const UTreeSpawnerData* currentSettings, const FVector& position, int capStartOffset, bool copyRing)
 {
 	int numSides{ currentSettings->NumSides };
+
+	// Due to the component not supporting multiple uv values per vertex, 
+	// the vertices used for the last ring are copied and used for correct uv calculations
 	if (copyRing)
 	{
 		int originalSize{ Vertices.Num() };
