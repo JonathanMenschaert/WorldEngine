@@ -28,48 +28,6 @@ enum class ETreeRandomType : uint8
 };
 
 USTRUCT(BlueprintType, Blueprintable)
-struct TREELITH_API FTreeSettings
-{
-	GENERATED_BODY()
-
-	UPROPERTY(BlueprintReadWrite)
-	ETreeType TreeType{ ETreeType::DEFAULT };
-
-	ETreeRandomType RandomType{ ETreeRandomType::DEFAULT };
-
-	UPROPERTY(BlueprintReadWrite)
-	int BranchDestinationAmount{ 20 };
-
-	UPROPERTY(BlueprintReadWrite)
-	float MinBranchLength{ 50.f };
-
-	UPROPERTY(BlueprintReadWrite)
-	float MaxBranchLength{ 100.f };
-
-	UPROPERTY(BlueprintReadWrite)
-	int NumSides{ 4 };
-
-	UPROPERTY(BlueprintReadWrite)
-	int GrowIterations{ 8 };
-
-	UPROPERTY(BlueprintReadWrite)
-	ELeafType LeafType{ ELeafType::DEFAULT };
-
-	UPROPERTY(BLueprintReadWrite)
-	float MinLeafDistance{ 150 };
-
-	UPROPERTY(BLueprintReadWrite)
-	float MaxLeafDistance{ 250 };
-
-	UPROPERTY(BlueprintReadWrite)
-	int NumLeavesPerBranch { 10 };
-
-	//Relative to actor location
-	UPROPERTY(BlueprintReadWrite)
-	FVector Position{0.f, 0.f, 0.f};
-};
-
-USTRUCT(BlueprintType, Blueprintable)
 struct TREELITH_API FTreeBranchLeaf
 {
 	GENERATED_BODY()

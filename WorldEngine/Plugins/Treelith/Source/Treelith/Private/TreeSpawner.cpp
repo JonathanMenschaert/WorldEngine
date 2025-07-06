@@ -3,6 +3,7 @@
 #include "KismetProceduralMeshLibrary.h"
 #include "TreeFunctionRegistry.h"
 #include "Treelith.h"
+#include "TreeSpawnerData.h"
 
 #include "DrawDebugHelpers.h"
 
@@ -19,7 +20,7 @@ ATreeSpawner::ATreeSpawner()
 void ATreeSpawner::InitializeSpawner(int seed, const TArray<FTreeSettings>& treeSettings)
 {
 	TreeSettings = treeSettings;
-	Trees.AddDefaulted(treeSettings.Num());
+	Trees.AddDefaulted(TreeSettings.Num());
 	Seed.Initialize(seed);
 }
 
@@ -48,7 +49,7 @@ void ATreeSpawner::GenerateTreeMesh()
 
 	for (int i{}; i < TreeSettings.Num(); ++i)
 	{
-		GenerateNextBranchMesh(TreeSettings[i], i, Trees[i].Branches[0]);
+		GenerateNextBranchMesh(TreeSettings[i].TreeSpawnerData, i, Trees[i].Branches[0]);
 	}
 
 	TArray<FVector> Normals{};
@@ -60,12 +61,13 @@ void ATreeSpawner::GenerateTreeMesh()
 
 void ATreeSpawner::GenerateTreeSkeleton(const FTreeSettings& currentSettings, FTreeSkeleton& currentTreeSkeleton)
 {
+	auto spawnerData{ currentSettings.TreeSpawnerData };
 
-	currentTreeSkeleton.Branches.Reserve(currentSettings.BranchDestinationAmount);
-	auto& randomizeBranchLeaf = UTreeFunctionRegistry::GetTreeRandomizationFunction(currentSettings.RandomType);
+	currentTreeSkeleton.Branches.Reserve(spawnerData->BranchDestinationAmount);
+	auto& randomizeBranchLeaf = UTreeFunctionRegistry::GetTreeRandomizationFunction(spawnerData->RandomType);
 
 	FTreeBranch root{};
-	randomizeBranchLeaf(Seed, currentTreeSkeleton.Leaves, root.BranchDir, currentSettings.BranchDestinationAmount);
+	randomizeBranchLeaf(Seed, currentTreeSkeleton.Leaves, currentSettings.Position, root.BranchDir, spawnerData->BranchDestinationAmount);
 
 	root.Position = currentSettings.Position;
 	root.NextDir = root.BranchDir;
@@ -84,22 +86,22 @@ void ATreeSpawner::GenerateTreeSkeleton(const FTreeSettings& currentSettings, FT
 		for (FTreeBranchLeaf& leaf : currentTreeSkeleton.Leaves)
 		{
 			float d = FVector::Distance(currentBranches[currentBranchIdx].Position, leaf.Position);
-			if (d < currentSettings.MaxLeafDistance)
+			if (d < spawnerData->MaxLeafDistance)
 			{
 				foundLeaf = true;
 			}			
 		}
 		if (!foundLeaf)
 		{
-			currentBranches[currentBranchIdx].Next(currentBranches, Seed.FRandRange(currentSettings.MinBranchLength, currentSettings.MaxBranchLength), currentBranches.Num());
+			currentBranches[currentBranchIdx].Next(currentBranches, Seed.FRandRange(spawnerData->MinBranchLength, spawnerData->MaxBranchLength), currentBranches.Num());
 			currentBranchIdx = currentBranches.Num() - 1;
 		}
 	}
 
-	GrowTreeSkeleton(currentSettings, currentTreeSkeleton, currentSettings.GrowIterations);
+	GrowTreeSkeleton(spawnerData, currentTreeSkeleton, spawnerData->GrowIterations);
 }
 
-void ATreeSpawner::GrowTreeSkeleton(const FTreeSettings& currentSettings, FTreeSkeleton& currentTreeSkeleton, int maxIterations)
+void ATreeSpawner::GrowTreeSkeleton(const UTreeSpawnerData* currentSettings, FTreeSkeleton& currentTreeSkeleton, int maxIterations)
 {
 	if (maxIterations <= 0)
 	{
@@ -116,12 +118,12 @@ void ATreeSpawner::GrowTreeSkeleton(const FTreeSettings& currentSettings, FTreeS
 		for (auto& branch : currentTreeSkeleton.Branches)
 		{
 			float d = FVector::Distance(leaf.Position, branch.Position);
-			if (d < currentSettings.MinLeafDistance)
+			if (d < currentSettings->MinLeafDistance)
 			{
 				leaf.IsReached = true;
 				closestBranchIdx = branch.CurrentIdx;
 			}
-			else if (d > currentSettings.MaxLeafDistance)
+			else if (d > currentSettings->MaxLeafDistance)
 			{
 				continue;
 			}
@@ -148,7 +150,7 @@ void ATreeSpawner::GrowTreeSkeleton(const FTreeSettings& currentSettings, FTreeS
 		auto& branch{ currentTreeSkeleton.Branches[i] };
 		if (branch.ShouldCreateNext)
 		{
-			branch.Next(currentTreeSkeleton.Branches, Seed.FRandRange(currentSettings.MinBranchLength, currentSettings.MaxBranchLength), currentTreeSkeleton.Branches.Num());
+			branch.Next(currentTreeSkeleton.Branches, Seed.FRandRange(currentSettings->MinBranchLength, currentSettings->MaxBranchLength), currentTreeSkeleton.Branches.Num());
 		}
 	}
 
@@ -176,7 +178,7 @@ void ATreeSpawner::IncrementBranchSizeAndPropagate(FTreeSkeleton& currentTreeSke
 	}
 }
 
-void ATreeSpawner::GenerateNextBranchMesh(const FTreeSettings& currentSettings, int currentTreeIdx, const FTreeBranch& currentBranch, int attachOffset)
+void ATreeSpawner::GenerateNextBranchMesh(const UTreeSpawnerData* currentSettings, int currentTreeIdx, const FTreeBranch& currentBranch, int attachOffset)
 {
 	int nextOffset{ Vertices.Num() };
 
@@ -235,9 +237,9 @@ void ATreeSpawner::GenerateNextBranchMesh(const FTreeSettings& currentSettings, 
 	}
 }
 
-void ATreeSpawner::GenerateNextBranchRing(const FTreeSettings& currentSettings, const FTreeBranch& currentBranch, const FVector& upVector, float minRingRadius, int prevRingOffset, int currentRingOffset)
+void ATreeSpawner::GenerateNextBranchRing(const UTreeSpawnerData* currentSettings, const FTreeBranch& currentBranch, const FVector& upVector, float minRingRadius, int prevRingOffset, int currentRingOffset)
 {
-	Vertices.AddDefaulted(currentSettings.NumSides);
+	Vertices.AddDefaulted(currentSettings->NumSides);
 
 	FQuat branchRotator{FQuat::Identity};
 
@@ -249,7 +251,7 @@ void ATreeSpawner::GenerateNextBranchRing(const FTreeSettings& currentSettings, 
 		branchRotator = FQuat{ rotationAxis, angleOffset };
 	}
 
-	int numSides{ currentSettings.NumSides };
+	int numSides{ currentSettings->NumSides };
 
 	for (int i{}; i < numSides; ++i)
 	{
@@ -280,9 +282,9 @@ void ATreeSpawner::GenerateNextBranchRing(const FTreeSettings& currentSettings, 
 	}
 }
 
-void ATreeSpawner::GenerateBranchCap(const FTreeSettings& currentSettings, const FVector& position, int capStartOffset, bool copyRing)
+void ATreeSpawner::GenerateBranchCap(const UTreeSpawnerData* currentSettings, const FVector& position, int capStartOffset, bool copyRing)
 {
-	int numSides{ currentSettings.NumSides };
+	int numSides{ currentSettings->NumSides };
 	if (copyRing)
 	{
 		int originalSize{ Vertices.Num() };

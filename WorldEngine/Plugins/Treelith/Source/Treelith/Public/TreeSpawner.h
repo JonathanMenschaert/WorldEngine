@@ -8,6 +8,7 @@
 #include "TreeSpawner.generated.h"
 
 class UProceduralMeshComponent;
+class UTreeSpawnerData;
 
 UCLASS(BlueprintType, Blueprintable)
 class TREELITH_API ATreeSpawner : public AActor
@@ -25,7 +26,7 @@ public:
 	ATreeSpawner();
 
 	UFUNCTION(BlueprintCallable)
-	void InitializeSpawner(int seed, const TArray<FTreeSettings>& treeSettings);
+	void InitializeSpawner(int seed, const TArray<FTreeSettings>& treeSpawnerData);
 
 	UFUNCTION(BlueprintCallable)
 	void GenerateTreeSkeleton();
@@ -46,7 +47,7 @@ private:
 
 
 	void GenerateTreeSkeleton(const FTreeSettings& currentSettings, FTreeSkeleton& currentTreeSkeleton);
-	void GrowTreeSkeleton(const FTreeSettings& currentSettings, FTreeSkeleton& currentTreeSkeleton, int maxIterations);
+	void GrowTreeSkeleton(const UTreeSpawnerData* currentSettings, FTreeSkeleton& currentTreeSkeleton, int maxIterations);
 	void FinalizeTreeSkeleton(FTreeSkeleton& currentTreeSkeleton);
 	void IncrementBranchSizeAndPropagate(FTreeSkeleton& currentTreeSkeleton, FTreeBranch& currentBranch, int size = 2);
 	
@@ -70,8 +71,8 @@ private:
 	UPROPERTY(EditAnywhere)
 	UMaterialInterface* LeafMaterial;
 
-	void GenerateNextBranchMesh(const FTreeSettings& currentSettings, int currentTreeIdx, const FTreeBranch& currentBranch,int attachOffset = -1);
-	void GenerateNextBranchRing(const FTreeSettings& currentSettings, const FTreeBranch& currentBranch, const FVector& upVector, float minRingRadius, int prevRingOffset, int currentRingOffset);
-	void GenerateBranchCap(const FTreeSettings& currentSettings, const FVector& position, int capStartOffset, bool copyRing);
+	void GenerateNextBranchMesh(const UTreeSpawnerData* currentSettings, int currentTreeIdx, const FTreeBranch& currentBranch,int attachOffset = -1);
+	void GenerateNextBranchRing(const UTreeSpawnerData* currentSettings, const FTreeBranch& currentBranch, const FVector& upVector, float minRingRadius, int prevRingOffset, int currentRingOffset);
+	void GenerateBranchCap(const UTreeSpawnerData* currentSettings, const FVector& position, int capStartOffset, bool copyRing);
 
 };
