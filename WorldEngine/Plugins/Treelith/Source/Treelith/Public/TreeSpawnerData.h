@@ -7,9 +7,40 @@
 #include "TreeData.h"
 #include "TreeSpawnerData.generated.h"
 
-/**
- * 
- */
+
+USTRUCT(BlueprintType, Blueprintable)
+struct TREELITH_API FLeafSettings
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere)
+	ELeafType LeafType{ ELeafType::OAK };
+
+	UPROPERTY(EditAnywhere)
+	float MinLeafDistance{ 150 };
+
+	UPROPERTY(EditAnywhere)
+	float MaxLeafDistance{ 250 };
+
+	UPROPERTY(EditAnywhere)
+	int NumLeavesPerBranch{ 10 };
+
+	UPROPERTY(EditAnywhere)
+	int MaxChildPerLeafBranch{ 0 };
+
+	UPROPERTY(EditAnywhere)
+	int IgnoreAmountBranchesFromBottom{ 2 };
+
+	UPROPERTY(EditAnywhere)
+	FVector2D LeafCardHalfDimensions{ 100.f, 100.f };
+
+	UPROPERTY(EditAnywhere)
+	FVector2D LeafCardDivisions{ 3.f, 3.f };
+
+	UPROPERTY(EditAnywhere)
+	FVector2D LeafCardZeroPoint{ 0.f, 0.f };
+};
+
 UCLASS(BlueprintType, Blueprintable)
 class TREELITH_API UTreeSpawnerData : public UDataAsset
 {
@@ -39,19 +70,10 @@ public:
 	int GrowIterations{ 8 };
 
 	UPROPERTY(EditAnywhere)
-	ELeafType LeafType{ ELeafType::OAK };
-
-	UPROPERTY(EditAnywhere)
-	float MinLeafDistance{ 150 };
-
-	UPROPERTY(EditAnywhere)
-	float MaxLeafDistance{ 250 };
-
-	UPROPERTY(EditAnywhere)
-	int NumLeavesPerBranch{ 10 };
-
-	UPROPERTY(EditAnywhere)
 	float MinBranchRadius{ 6.f };
+
+	UPROPERTY(EditAnywhere)
+	FLeafSettings LeafSettings{};
 
 	UPROPERTY(EditAnywhere)
 	TArray<UCurveFloat*> BranchShapes;

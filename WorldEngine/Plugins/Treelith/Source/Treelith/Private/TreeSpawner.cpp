@@ -71,7 +71,7 @@ void ATreeSpawner::GenerateTreeMesh()
 	}
 
 	UKismetProceduralMeshLibrary::CalculateTangentsForMesh(Vertices, Triangles, UV0, Normals, Tangents);
-	TreeMesh->CreateMeshSection_LinearColor(1, Vertices, Triangles, Normals, UV0, TArray<FLinearColor>{}, Tangents, true);
+	TreeMesh->CreateMeshSection_LinearColor(1, Vertices, Triangles, Normals, UV0, TArray<FLinearColor>{}, Tangents, false);
 
 
 	TreeMesh->SetMaterial(0, BarkMaterial);
@@ -106,7 +106,7 @@ void ATreeSpawner::GenerateTreeSkeleton(const FTreeSettings& currentSettings, FT
 		for (FTreeBranchDestination& branchDest : BranchDestinations)
 		{
 			float d = FVector::Distance(currentBranches[currentBranchIdx].Position, branchDest.Position);
-			if (d < spawnerData->MaxLeafDistance)
+			if (d < spawnerData->LeafSettings.MaxLeafDistance)
 			{
 				foundLeaf = true;
 			}			
@@ -134,6 +134,8 @@ void ATreeSpawner::GrowTreeSkeleton(const UTreeSpawnerData* currentSettings, FTr
 	UE_LOG(LogTreelith, Log, TEXT("Branch Growing..."));
 	int closestBranchIdx{-1};
 
+	const FLeafSettings& leafSettings{ currentSettings->LeafSettings };
+
 	//Check what leaves are in distance of the branches
 	for (auto& branchDest : BranchDestinations)
 	{
@@ -141,12 +143,12 @@ void ATreeSpawner::GrowTreeSkeleton(const UTreeSpawnerData* currentSettings, FTr
 		for (auto& branch : currentTreeSkeleton.Branches)
 		{
 			float d = FVector::Distance(branchDest.Position, branch.Position);
-			if (d < currentSettings->MinLeafDistance)
+			if (d < leafSettings.MinLeafDistance)
 			{
 				branchDest.IsReached = true;
 				closestBranchIdx = branch.CurrentIdx;
 			}
-			else if (d > currentSettings->MaxLeafDistance)
+			else if (d > leafSettings.MaxLeafDistance)
 			{
 				continue;
 			}
@@ -186,8 +188,7 @@ void ATreeSpawner::GrowTreeSkeleton(const UTreeSpawnerData* currentSettings, FTr
 
 void ATreeSpawner::FinalizeTreeSkeleton(const UTreeSpawnerData* currentSettings, FTreeSkeleton& currentTreeSkeleton)
 {
-
-	auto canPlaceLeaves{ UTreeFunctionRegistry::GetLeafPlacementFunction(currentSettings->LeafType) };
+	const FLeafSettings& leafSettings{ currentSettings->LeafSettings };
 
 	//Loop over all branches to add the correct sizing to the trunk and branches.
 	for (FTreeBranch& branch : currentTreeSkeleton.Branches)
@@ -200,7 +201,7 @@ void ATreeSpawner::FinalizeTreeSkeleton(const UTreeSpawnerData* currentSettings,
 			IncrementBranchSizeAndPropagate(currentTreeSkeleton, branch);
 		}
 
-		if (currentSettings->LeafType != ELeafType::NONE && canPlaceLeaves(branch))
+		if (branch.ChildIdxs.Num() <= leafSettings.MaxChildPerLeafBranch && branch.CurrentIdx >= leafSettings.IgnoreAmountBranchesFromBottom)
 		{
 			currentTreeSkeleton.LeafBranches.Add(branch.CurrentIdx);
 		}
@@ -344,8 +345,6 @@ void ATreeSpawner::GenerateNextBranchRing(const UTreeSpawnerData* currentSetting
 		int vert2 = currentRingOffset + i;
 		int vert3 = currentRingOffset + next;
 
-		//UE_LOG(LogTemp, Log, TEXT("Vertex values: %i - %i, %i - %i"), vert0, vert2, vert1, vert3);
-
 		Triangles.Add(vert0); Triangles.Add(vert2); Triangles.Add(vert1);
 		Triangles.Add(vert1); Triangles.Add(vert2); Triangles.Add(vert3);
 	}
@@ -379,38 +378,81 @@ void ATreeSpawner::GenerateBranchCap(const UTreeSpawnerData* currentSettings, co
 
 void ATreeSpawner::GenerateEndBranchLeaves(const UTreeSpawnerData* currentSettings, const FTreeSkeleton& currentTreeSkeleton)
 {
-	TArray<FVector> leafTemplate{ 
+	/*TArray<FVector> leafTemplate{ 
 									FVector{-100.f, -100.f, 0.f}, FVector{0.f, -100.f, 0.f}, FVector{100.f, -100.f, 0.f},
 									FVector{-100.f, 0.f, 0.f}, FVector{0.f, 0.f, 0.f}, FVector{100.f, 0.f, 0.f},
 									FVector{-100.f, 100.f, 0.f}, FVector{0.f, 100.f, 0.f}, FVector{100.f, 100.f, 0.f} 
-	};
+	};*/
+
+	TArray<FVector> leafTemplate{};
+	TArray<FVector2D> UVTemplate{};
+	TArray<int> indicesTemplate{};
+	GenerateLeafCard(leafTemplate, UVTemplate, indicesTemplate, currentSettings->LeafSettings.LeafCardHalfDimensions, currentSettings->LeafSettings.LeafCardDivisions, currentSettings->LeafSettings.LeafCardZeroPoint);
 
 	const TArray<int>& endBranches{ currentTreeSkeleton.LeafBranches };
 	for (int i{}; i < endBranches.Num(); ++i)
 	{
 		const FTreeBranch& branch{ currentTreeSkeleton.Branches[endBranches[i]] };
 
-		for (int j{}; j < currentSettings->NumLeavesPerBranch; ++j)
+		for (int j{}; j < currentSettings->LeafSettings.NumLeavesPerBranch; ++j)
 		{
 			FVector randRotVector{ Seed.GetUnitVector() };
 
-			float angleBetween{ static_cast<float>(FQuat::FindBetweenNormals(branch.BranchDir, randRotVector).GetAngle())};
-			FVector rotationAxis{ FVector::CrossProduct(branch.BranchDir, randRotVector) };			
+			float angleBetween{ static_cast<float>(FQuat::FindBetweenNormals(branch.BranchDir, randRotVector).GetAngle()) };
+			FVector rotationAxis{ FVector::CrossProduct(branch.BranchDir, randRotVector) };
 			FQuat branchRotator{ rotationAxis, angleBetween };
-			
+
 			int vertOffset{ Vertices.Num() };
 
-			Vertices.Add(branchRotator.RotateVector(leafTemplate[0]) + branch.Position);
-			Vertices.Add(branchRotator.RotateVector(leafTemplate[1]) + branch.Position);
-			Vertices.Add(branchRotator.RotateVector(leafTemplate[2]) + branch.Position);
-			Vertices.Add(branchRotator.RotateVector(leafTemplate[3]) + branch.Position);
 
-			int vert0 = vertOffset + 3;
-			int vert1 = vertOffset + 2;
-			int vert2 = vertOffset + 1;
-			int vert3 = vertOffset;
-			Triangles.Add(vert0); Triangles.Add(vert1); Triangles.Add(vert2);
-			Triangles.Add(vert1); Triangles.Add(vert3); Triangles.Add(vert2);
+			for (const FVector& leafVertex : leafTemplate)
+			{			
+				Vertices.Add(branchRotator.RotateVector(leafVertex + FVector{0.f, 0.f, Seed.FRandRange(-20.f, 20.f)}) + branch.Position);
+			}
+
+			UV0.Append(UVTemplate);
+
+			for (int idx{}; idx < indicesTemplate.Num(); ++idx)
+			{
+				Triangles.Add(indicesTemplate[idx] + vertOffset);
+			}
+		}
+	}
+}
+
+void ATreeSpawner::GenerateLeafCard(TArray<FVector>& outLeafCard, TArray<FVector2D>& outUVs, TArray<int>& outTriangles, const FVector2D& cardDimensions, const FVector2D& cardDivisions, const FVector2D& zeroPoint)
+{
+	int sizeX{ static_cast<int>(cardDivisions.X)};
+	int sizeY{ static_cast<int>(cardDivisions.Y)};
+	int size{ (sizeX + 1) * (sizeY + 1)};
+	outLeafCard.Reserve(size);
+	outUVs.Reserve(size);
+
+	FVector2D fullDimensions{ 2 * cardDimensions };
+	FVector2D divisions{ fullDimensions / cardDivisions };
+	FVector2D uvDivisions{ 1.f / sizeX, 1.f / sizeY };
+
+	for (int i{}; i <= sizeX; ++i)
+	{
+		for (int j{}; j <= sizeY; ++j)
+		{
+			outLeafCard.Emplace(FVector{ i * divisions.X - cardDimensions.X + zeroPoint.X, j * divisions.Y - cardDimensions.Y + zeroPoint.Y, 0.f });
+			outUVs.Emplace(FVector2D{ i * uvDivisions.X, j * uvDivisions.Y });
+		}
+	}
+
+	for (int i{}; i < sizeX; ++i)
+	{
+		for (int j{}; j < sizeY; ++j)
+		{
+			int vert0{ i * (sizeY + 1) + j };			
+			int vert1{ vert0 + 1 };
+			int vert2{ vert0 + sizeX + 1};			
+			int vert3{ vert2 + 1 };
+			
+
+			outTriangles.Add(vert0); outTriangles.Add(vert1); outTriangles.Add(vert2);
+			outTriangles.Add(vert1); outTriangles.Add(vert3); outTriangles.Add(vert2);
 		}
 	}
 }
