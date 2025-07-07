@@ -70,7 +70,7 @@ void ATreeSpawner::GenerateTreeSkeleton(const FTreeSettings& currentSettings, FT
 
 	//Grab correct randomizer function from the registry and update root
 	auto& randomizeBranchLeaf = UTreeFunctionRegistry::GetTreeRandomizationFunction(spawnerData->RandomType);
-	randomizeBranchLeaf(Seed, currentTreeSkeleton.Leaves, currentSettings.Position, root.BranchDir, spawnerData->BranchDestinationAmount);
+	randomizeBranchLeaf(Seed, BranchDestinations, currentSettings.Position, root.BranchDir, spawnerData->BranchDestinationAmount);
 	root.NextDir = root.BranchDir;
 
 	//Generate trunk
@@ -84,9 +84,9 @@ void ATreeSpawner::GenerateTreeSkeleton(const FTreeSettings& currentSettings, FT
 	while (!foundLeaf)
 	{
 		UE_LOG(LogTreelith, Log, TEXT("Trunk Growing..."));
-		for (FTreeBranchLeaf& leaf : currentTreeSkeleton.Leaves)
+		for (FTreeBranchDestination& branchDest : BranchDestinations)
 		{
-			float d = FVector::Distance(currentBranches[currentBranchIdx].Position, leaf.Position);
+			float d = FVector::Distance(currentBranches[currentBranchIdx].Position, branchDest.Position);
 			if (d < spawnerData->MaxLeafDistance)
 			{
 				foundLeaf = true;
@@ -116,15 +116,15 @@ void ATreeSpawner::GrowTreeSkeleton(const UTreeSpawnerData* currentSettings, FTr
 	int closestBranchIdx{-1};
 
 	//Check what leaves are in distance of the branches
-	for (auto& leaf : currentTreeSkeleton.Leaves)
+	for (auto& branchDest : BranchDestinations)
 	{
 		int maxDistance{ INT32_MAX };
 		for (auto& branch : currentTreeSkeleton.Branches)
 		{
-			float d = FVector::Distance(leaf.Position, branch.Position);
+			float d = FVector::Distance(branchDest.Position, branch.Position);
 			if (d < currentSettings->MinLeafDistance)
 			{
-				leaf.IsReached = true;
+				branchDest.IsReached = true;
 				closestBranchIdx = branch.CurrentIdx;
 			}
 			else if (d > currentSettings->MaxLeafDistance)
@@ -142,14 +142,14 @@ void ATreeSpawner::GrowTreeSkeleton(const UTreeSpawnerData* currentSettings, FTr
 		if (closestBranchIdx >= 0)
 		{
 			FTreeBranch& currentBranch{ currentTreeSkeleton.Branches[closestBranchIdx] };
-			FVector newDir{ leaf.Position - currentBranch.Position };
+			FVector newDir{ branchDest.Position - currentBranch.Position };
 			newDir.Normalize();
 			currentBranch.AddDirection(newDir);
 		}
 	}
 
 	//Remove all leaves that have a branch near, indicated by the IsReached variable
-	currentTreeSkeleton.Leaves.RemoveAll([&](FTreeBranchLeaf& leaf) {return leaf.IsReached; });
+	BranchDestinations.RemoveAll([&](FTreeBranchDestination& leaf) {return leaf.IsReached; });
 
 	//Loop over branches and create a child branch to the branches that have a leaf near them
 	for (int i{ currentTreeSkeleton.Branches.Num() - 1 }; i >= 0; --i)
@@ -365,9 +365,9 @@ void ATreeSpawner::Debug()
 			}
 		}
 
-		for (const FTreeBranchLeaf& leaf : currentTree.Leaves)
+		for (const FTreeBranchDestination& branchDest : BranchDestinations)
 		{
-			DrawDebugCircle(GetWorld(), leaf.Position, 5.f, 4, FColor::Red, true, -1.f, 0U, 2.f);
+			DrawDebugCircle(GetWorld(), branchDest.Position, 5.f, 4, FColor::Red, true, -1.f, 0U, 2.f);
 		}
 	}
 }

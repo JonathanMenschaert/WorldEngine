@@ -43,6 +43,8 @@ private:
 	//Tree Skeleton Generation
 	UProceduralMeshComponent* TreeMesh;
 	TArray<FTreeSettings> TreeSettings;
+	UPROPERTY(EditAnywhere)
+	TArray<FTreeBranchDestination> BranchDestinations;
 	FRandomStream Seed;
 
 

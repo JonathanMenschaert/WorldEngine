@@ -28,7 +28,7 @@ enum class ETreeRandomType : uint8
 };
 
 USTRUCT(BlueprintType, Blueprintable)
-struct TREELITH_API FTreeBranchLeaf
+struct TREELITH_API FTreeBranchDestination
 {
 	GENERATED_BODY()
 
@@ -88,9 +88,6 @@ struct TREELITH_API FTreeSkeleton
 
 	UPROPERTY(EditAnywhere)
 	TArray<FTreeBranch> Branches;
-
-	UPROPERTY(EditAnywhere)
-	TArray<FTreeBranchLeaf> Leaves;
 
 	UPROPERTY(EditAnywhere)
 	TArray<int> EndBranches;
