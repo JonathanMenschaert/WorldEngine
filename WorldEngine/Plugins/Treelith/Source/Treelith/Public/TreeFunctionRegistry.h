@@ -19,11 +19,12 @@ class TREELITH_API UTreeFunctionRegistry : public UObject
 public: 
 	static void InitializeRegistries();
 	static TFunction<void(FRandomStream&, TArray<FTreeBranchDestination>&, const FVector&, FVector&, int)>& GetTreeRandomizationFunction(ETreeRandomType treeType);
+
 	static void UninitalizeRegistries();
 
 private:
 
 	static TMap<ETreeRandomType, TFunction<void(FRandomStream&, TArray<FTreeBranchDestination>&, const FVector&, FVector&, int)>> TreeRandomizationRegistry;
 
-	static void InitializeTreeRandomizationRegistry();	
+	static void InitializeTreeRandomizationRegistry();
 };

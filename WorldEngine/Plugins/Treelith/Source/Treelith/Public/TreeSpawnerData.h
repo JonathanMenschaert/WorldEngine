@@ -39,7 +39,7 @@ public:
 	int GrowIterations{ 8 };
 
 	UPROPERTY(EditAnywhere)
-	ELeafType LeafType{ ELeafType::DEFAULT };
+	ELeafType LeafType{ ELeafType::OAK };
 
 	UPROPERTY(EditAnywhere)
 	float MinLeafDistance{ 150 };

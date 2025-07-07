@@ -51,12 +51,31 @@ void ATreeSpawner::GenerateTreeMesh()
 	{
 		GenerateNextBranchMesh(TreeSettings[i].TreeSpawnerData, i, Trees[i].Branches[0]);
 	}
-
 	TArray<FVector> Normals{};
 	TArray<FProcMeshTangent> Tangents{};
 	UKismetProceduralMeshLibrary::CalculateTangentsForMesh(Vertices, Triangles, UV0, Normals, Tangents);
 	TreeMesh->CreateMeshSection_LinearColor(0, Vertices, Triangles, Normals, UV0, TArray<FLinearColor>{}, Tangents, true);
+
+	//Reset seed to initial to ensure the leaves generate the same way if the tree mesh is regenerated for lower polycounts
+	Seed.Reset();
+	Vertices.Empty();
+	Triangles.Empty();
+	UV0.Empty();
+	Normals.Empty();
+	Tangents.Empty();
+
+
+	for (int i{}; i < TreeSettings.Num(); ++i)
+	{
+		GenerateEndBranchLeaves(TreeSettings[i].TreeSpawnerData, Trees[i]);
+	}
+
+	UKismetProceduralMeshLibrary::CalculateTangentsForMesh(Vertices, Triangles, UV0, Normals, Tangents);
+	TreeMesh->CreateMeshSection_LinearColor(1, Vertices, Triangles, Normals, UV0, TArray<FLinearColor>{}, Tangents, true);
+
+
 	TreeMesh->SetMaterial(0, BarkMaterial);
+	TreeMesh->SetMaterial(1, LeafMaterial);
 }
 
 void ATreeSpawner::GenerateTreeSkeleton(const FTreeSettings& currentSettings, FTreeSkeleton& currentTreeSkeleton)
@@ -167,6 +186,9 @@ void ATreeSpawner::GrowTreeSkeleton(const UTreeSpawnerData* currentSettings, FTr
 
 void ATreeSpawner::FinalizeTreeSkeleton(const UTreeSpawnerData* currentSettings, FTreeSkeleton& currentTreeSkeleton)
 {
+
+	auto canPlaceLeaves{ UTreeFunctionRegistry::GetLeafPlacementFunction(currentSettings->LeafType) };
+
 	//Loop over all branches to add the correct sizing to the trunk and branches.
 	for (FTreeBranch& branch : currentTreeSkeleton.Branches)
 	{
@@ -175,8 +197,12 @@ void ATreeSpawner::FinalizeTreeSkeleton(const UTreeSpawnerData* currentSettings,
 		//Branches with no child branches are added to a separate array to add the leaf foliage to in the mesh generation stage
 		if (branch.ChildIdxs.Num() == 0)
 		{
-			currentTreeSkeleton.EndBranches.Add(branch.CurrentIdx);
 			IncrementBranchSizeAndPropagate(currentTreeSkeleton, branch);
+		}
+
+		if (currentSettings->LeafType != ELeafType::NONE && canPlaceLeaves(branch))
+		{
+			currentTreeSkeleton.LeafBranches.Add(branch.CurrentIdx);
 		}
 	}
 }
@@ -348,6 +374,44 @@ void ATreeSpawner::GenerateBranchCap(const UTreeSpawnerData* currentSettings, co
 		int vert1 = capStartOffset + ((i + 1) % numSides);
 
 		Triangles.Add(vert1); Triangles.Add(vert0); Triangles.Add(capVert);
+	}
+}
+
+void ATreeSpawner::GenerateEndBranchLeaves(const UTreeSpawnerData* currentSettings, const FTreeSkeleton& currentTreeSkeleton)
+{
+	TArray<FVector> leafTemplate{ 
+									FVector{-100.f, -100.f, 0.f}, FVector{0.f, -100.f, 0.f}, FVector{100.f, -100.f, 0.f},
+									FVector{-100.f, 0.f, 0.f}, FVector{0.f, 0.f, 0.f}, FVector{100.f, 0.f, 0.f},
+									FVector{-100.f, 100.f, 0.f}, FVector{0.f, 100.f, 0.f}, FVector{100.f, 100.f, 0.f} 
+	};
+
+	const TArray<int>& endBranches{ currentTreeSkeleton.LeafBranches };
+	for (int i{}; i < endBranches.Num(); ++i)
+	{
+		const FTreeBranch& branch{ currentTreeSkeleton.Branches[endBranches[i]] };
+
+		for (int j{}; j < currentSettings->NumLeavesPerBranch; ++j)
+		{
+			FVector randRotVector{ Seed.GetUnitVector() };
+
+			float angleBetween{ static_cast<float>(FQuat::FindBetweenNormals(branch.BranchDir, randRotVector).GetAngle())};
+			FVector rotationAxis{ FVector::CrossProduct(branch.BranchDir, randRotVector) };			
+			FQuat branchRotator{ rotationAxis, angleBetween };
+			
+			int vertOffset{ Vertices.Num() };
+
+			Vertices.Add(branchRotator.RotateVector(leafTemplate[0]) + branch.Position);
+			Vertices.Add(branchRotator.RotateVector(leafTemplate[1]) + branch.Position);
+			Vertices.Add(branchRotator.RotateVector(leafTemplate[2]) + branch.Position);
+			Vertices.Add(branchRotator.RotateVector(leafTemplate[3]) + branch.Position);
+
+			int vert0 = vertOffset + 3;
+			int vert1 = vertOffset + 2;
+			int vert2 = vertOffset + 1;
+			int vert3 = vertOffset;
+			Triangles.Add(vert0); Triangles.Add(vert1); Triangles.Add(vert2);
+			Triangles.Add(vert1); Triangles.Add(vert3); Triangles.Add(vert2);
+		}
 	}
 }
 

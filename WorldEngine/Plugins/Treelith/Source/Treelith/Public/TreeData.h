@@ -16,7 +16,7 @@ enum class ETreeType : uint8
 UENUM(BlueprintType, Blueprintable)
 enum class ELeafType : uint8
 {
-	DEFAULT,
+	NONE,
 	OAK
 };
 
@@ -90,7 +90,7 @@ struct TREELITH_API FTreeSkeleton
 	TArray<FTreeBranch> Branches;
 
 	UPROPERTY(EditAnywhere)
-	TArray<int> EndBranches;
+	TArray<int> LeafBranches;
 	
 };
 
