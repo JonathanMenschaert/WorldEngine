@@ -41,6 +41,15 @@ void FTreeBranch::Next(TArray<FTreeBranch>& branchList, float nextBranchLength, 
 	ShouldCreateNext = false;
 }
 
+void FTreeBranch::SetUVLength(float uvLength, float uvOffset, float parentBranchLength)
+{
+	if (parentBranchLength >= 0.f)
+	{
+		float branchUV{ uvOffset + (BranchLength / uvLength) };
+		UvOffset = (branchUV - FMath::Floor(branchUV));
+	}
+}
+
 void FTreeBranch::AddDirection(const FVector& newDir)
 {
 	NextDir += newDir;

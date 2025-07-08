@@ -72,11 +72,15 @@ struct TREELITH_API FTreeBranch
 
 	int BranchShapeIdx{ -1 };
 
+	float UvOffset{ 0.f };
+
 	FTreeBranch();
 
 	FTreeBranch(int currentIdx, int parentIdx, float currentBranchLength, const FVector& position, const FVector& direction, int branchShapeIdx);
 
-	void Next(TArray<FTreeBranch>& branchList, float currentBranchLength, int nextIdx, int branchShapeIdx);
+	void Next(TArray<FTreeBranch>& branchList, float nextBranchLength, int nextIdx, int branchShapeIdx);
+
+	void SetUVLength(float uvLength, float uvOffset, float parentBranchLength);
 
 	void AddDirection(const FVector& newDir);
 };

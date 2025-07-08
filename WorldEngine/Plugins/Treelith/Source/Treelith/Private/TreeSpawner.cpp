@@ -218,7 +218,7 @@ void ATreeSpawner::IncrementBranchSizeAndPropagate(FTreeSkeleton& currentTreeSke
 	}
 }
 
-void ATreeSpawner::GenerateNextBranchMesh(const UTreeSpawnerData* currentSettings, int currentTreeIdx, const FTreeBranch& currentBranch, int attachOffset)
+void ATreeSpawner::GenerateNextBranchMesh(const UTreeSpawnerData* currentSettings, int currentTreeIdx, FTreeBranch& currentBranch, int attachOffset)
 {
 	int nextOffset{ Vertices.Num() };
 
@@ -232,7 +232,7 @@ void ATreeSpawner::GenerateNextBranchMesh(const UTreeSpawnerData* currentSetting
 		{
 			FTreeBranch& childBranch{ Trees[currentTreeIdx].Branches[currentChildIdx] };			
 			childBranch.ParentVertexStart = -1;
-
+			childBranch.SetUVLength(currentSettings->UVLength, currentBranch.UvOffset, currentBranch.BranchLength);
 			float branchVal = FMath::Acos(FVector::DotProduct(childBranch.BranchDir, currentBranch.BranchDir));
 
 			if (branchVal < closestBranchVal)
@@ -244,7 +244,6 @@ void ATreeSpawner::GenerateNextBranchMesh(const UTreeSpawnerData* currentSetting
 
 		FTreeBranch& closestBranch{ Trees[currentTreeIdx].Branches[closestBranchIdx] };
 		closestBranch.ParentVertexStart = nextOffset;
-
 
 		//Before the vertex ring is generated, both the size of the tree and the branchdirection are averaged to ensure:
 		//- the branch doesn't look squished when connected to the next branch
@@ -272,6 +271,7 @@ void ATreeSpawner::GenerateNextBranchMesh(const UTreeSpawnerData* currentSetting
 			if (childBranch.ParentVertexStart < 0)
 			{
 				childBranch.ParentVertexStart = Vertices.Num();
+				childBranch.UvOffset = 0.f;
 				GenerateNextBranchRing(currentSettings, currentBranch, childBranch.BranchDir, childBranch.BranchSize, -1, childBranch.ParentVertexStart);
 			}
 
@@ -281,6 +281,7 @@ void ATreeSpawner::GenerateNextBranchMesh(const UTreeSpawnerData* currentSetting
 	else
 	{
 		//if a branch has no child, a final ring is made, which is then closed off by a cap.
+		currentBranch.SetUVLength(currentSettings->UVLength, currentBranch.UvOffset, currentBranch.BranchLength);
 		GenerateNextBranchRing(currentSettings, currentBranch, currentBranch.BranchDir, currentBranch.BranchSize / 2.f, attachOffset, nextOffset);
 		GenerateBranchCap(currentSettings, currentBranch.Position, nextOffset, true);
 	}
@@ -288,8 +289,9 @@ void ATreeSpawner::GenerateNextBranchMesh(const UTreeSpawnerData* currentSetting
 
 void ATreeSpawner::GenerateNextBranchRing(const UTreeSpawnerData* currentSettings, const FTreeBranch& currentBranch, const FVector& upVector, float minRingRadius, int prevRingOffset, int currentRingOffset)
 {
-	Vertices.AddDefaulted(currentSettings->NumSides);
-
+	int numSides{ currentSettings->NumSides };
+	Vertices.AddDefaulted(numSides + 1);
+	UV0.AddDefaulted(numSides + 1);
 	FQuat branchRotator{FQuat::Identity};
 
 	//If the branchdirection and the world upvector are different enough, a quaternion is prepared to correctly rotate the vertex ring
@@ -319,7 +321,6 @@ void ATreeSpawner::GenerateNextBranchRing(const UTreeSpawnerData* currentSetting
 	}
 
 
-	int numSides{ currentSettings->NumSides };
 	for (int i{}; i < numSides; ++i)
 	{
 		float angle{ TWO_PI * i / numSides };
@@ -330,16 +331,18 @@ void ATreeSpawner::GenerateNextBranchRing(const UTreeSpawnerData* currentSetting
 		FVector nextVert = vertexRotator.RotateVector(FVector::RightVector * (minRingRadius + additionalDistance * radiusOffsetMultiplier));
 		nextVert = branchRotator.RotateVector(nextVert) + currentBranch.Position;
 		Vertices[currentRingOffset + i] = nextVert;
-
+		UV0[currentRingOffset + i] = FVector2D{ 1.f / numSides * i, currentBranch.UvOffset };
 		//outUVs[nextRingOffset + i] = FVector2D{ 1.f / numSides * i, 0.f };
 	}
+	Vertices[currentRingOffset + numSides] = Vertices[currentRingOffset];
+	UV0[currentRingOffset + numSides] = FVector2D{ 1.f, currentBranch.UvOffset };
 
 	//If there is no mesh to generate, return
 	if (prevRingOffset < 0) return;
 
 	for (int i{}; i < numSides; ++i)
 	{
-		int next = ((i + 1) % numSides);
+		int next = i + 1;
 		int vert0 = prevRingOffset + i;
 		int vert1 = prevRingOffset + next;
 		int vert2 = currentRingOffset + i;
@@ -365,7 +368,10 @@ void ATreeSpawner::GenerateBranchCap(const UTreeSpawnerData* currentSettings, co
 		capStartOffset += numSides;
 	}	
 
+
+
 	int capVert = Vertices.Add(position);
+	UV0.AddDefaulted(numSides + 1);
 
 	for (int i{}; i < numSides; ++i)
 	{
@@ -378,12 +384,6 @@ void ATreeSpawner::GenerateBranchCap(const UTreeSpawnerData* currentSettings, co
 
 void ATreeSpawner::GenerateEndBranchLeaves(const UTreeSpawnerData* currentSettings, const FTreeSkeleton& currentTreeSkeleton)
 {
-	/*TArray<FVector> leafTemplate{ 
-									FVector{-100.f, -100.f, 0.f}, FVector{0.f, -100.f, 0.f}, FVector{100.f, -100.f, 0.f},
-									FVector{-100.f, 0.f, 0.f}, FVector{0.f, 0.f, 0.f}, FVector{100.f, 0.f, 0.f},
-									FVector{-100.f, 100.f, 0.f}, FVector{0.f, 100.f, 0.f}, FVector{100.f, 100.f, 0.f} 
-	};*/
-
 	TArray<FVector> leafTemplate{};
 	TArray<FVector2D> UVTemplate{};
 	TArray<int> indicesTemplate{};

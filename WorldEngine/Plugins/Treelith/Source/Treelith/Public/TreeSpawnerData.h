@@ -71,6 +71,9 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	float MinBranchRadius{ 6.f };
+	 
+	UPROPERTY(EditAnywhere)
+	float UVLength{ 100.f };
 
 	UPROPERTY(EditAnywhere)
 	FLeafSettings LeafSettings{};
