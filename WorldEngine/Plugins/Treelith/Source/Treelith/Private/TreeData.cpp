@@ -45,8 +45,7 @@ void FTreeBranch::SetUVLength(float uvLength, float uvOffset, float parentBranch
 {
 	if (parentBranchLength >= 0.f)
 	{
-		float branchUV{ uvOffset + (BranchLength / uvLength) };
-		UvOffset = (branchUV - FMath::Floor(branchUV));
+		UvOffset = uvOffset + (parentBranchLength / uvLength);
 	}
 }
 
