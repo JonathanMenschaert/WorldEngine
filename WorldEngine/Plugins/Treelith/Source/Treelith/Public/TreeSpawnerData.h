@@ -23,6 +23,9 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	TArray<FVector2D> UVs;
+
+	UPROPERTY(EditAnywhere)
+	TArray<FLinearColor> VertexColors;
 };
 
 USTRUCT(BlueprintType, Blueprintable)

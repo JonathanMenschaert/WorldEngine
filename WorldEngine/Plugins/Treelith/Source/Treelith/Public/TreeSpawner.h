@@ -51,6 +51,8 @@ private:
 	void GenerateTreeSkeleton(const FTreeSettings& currentSettings, FTreeSkeleton& currentTreeSkeleton);
 	void GrowTreeSkeleton(const UTreeSpawnerData* currentSettings, FTreeSkeleton& currentTreeSkeleton, int maxIterations);
 	void FinalizeTreeSkeleton(const UTreeSpawnerData* currentSettings, FTreeSkeleton& currentTreeSkeleton);
+
+	void UpdateTreeHeightMinMax(FTreeSkeleton& currentTreeSkeleton, float zPos);
 	void IncrementBranchSizeAndPropagate(FTreeSkeleton& currentTreeSkeleton, FTreeBranch& currentBranch, int size = 2);
 	
 	//Tree Mesh generation
@@ -68,14 +70,18 @@ private:
 	TArray<FVector2D> UV1;
 
 	UPROPERTY(EditAnywhere)
+	TArray<FLinearColor> VertexColors;
+
+
+	UPROPERTY(EditAnywhere)
 	UMaterialInterface* BarkMaterial;
 
 	UPROPERTY(EditAnywhere)
 	UMaterialInterface* LeafMaterial;
 
 	void GenerateNextBranchMesh(const UTreeSpawnerData* currentSettings, int currentTreeIdx, FTreeBranch& currentBranch,int attachOffset = -1);
-	void GenerateNextBranchRing(const UTreeSpawnerData* currentSettings, const FTreeBranch& currentBranch, const FVector& upVector, float minRingRadius, int prevRingOffset, int currentRingOffset);
-	void GenerateBranchCap(const UTreeSpawnerData* currentSettings, const FVector& position, int capStartOffset, bool copyRing);
+	void GenerateNextBranchRing(const UTreeSpawnerData* currentSettings, int currentTreeIdx, const FTreeBranch& currentBranch, const FVector& upVector, float minRingRadius, int prevRingOffset, int currentRingOffset);
+	void GenerateBranchCap(const UTreeSpawnerData* currentSettings, int currentTreeIdx, const FVector& position, int capStartOffset, bool copyRing);
 
 	void GenerateEndBranchLeaves(const UTreeSpawnerData* currentSettings, const FTreeSkeleton& currentTreeSkeleton);
 	void GenerateLeafCard(TArray<FVector>& outLeafCard, TArray<FVector2D>& outUVs, TArray<int>& outTriangles, const FVector2D& cardDimensions, const FVector2D& cardDivisions, const FVector& zeroPoint);

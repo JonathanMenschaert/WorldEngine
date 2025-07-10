@@ -95,6 +95,14 @@ struct TREELITH_API FTreeSkeleton
 
 	UPROPERTY(EditAnywhere)
 	TArray<int> LeafBranches;
+
+	UPROPERTY(EditAnywhere)
+	float MinHeight{ FLT_MIN };
 	
+	UPROPERTY(EditAnywhere)
+	float MaxHeight{ FLT_MAX };
+
+	inline float GetNormalizedHeight(float zPos);
+
 };
 
