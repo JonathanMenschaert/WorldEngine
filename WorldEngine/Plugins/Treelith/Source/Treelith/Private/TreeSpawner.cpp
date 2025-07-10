@@ -87,7 +87,7 @@ void ATreeSpawner::GenerateTreeSkeleton(const FTreeSettings& currentSettings, FT
 	//set up root branch
 	int branchRadiusOffsetIdx{ spawnerData->RootShapes.Num() > 0 ? Seed.RandRange(0, spawnerData->RootShapes.Num() - 1) : -1 };
 	FTreeBranch root{0, -1, static_cast<float>(Seed.FRandRange(20.f, 25.f)), currentSettings.Position, FVector::UpVector, branchRadiusOffsetIdx};
-
+	root.UvOffset = 0.f;
 	currentTreeSkeleton.MinHeight = root.Position.Z;
 	currentTreeSkeleton.MaxHeight = root.Position.Z;
 	//Grab correct randomizer function from the registry and update root
@@ -275,8 +275,8 @@ void ATreeSpawner::GenerateNextBranchMesh(const UTreeSpawnerData* currentSetting
 			avgBranchDir += closestBranch.BranchDir;
 			avgBranchDir.Normalize();
 
-			avgSize += Trees[currentTreeIdx].Branches[currentBranch.ParentIdx].BranchSize;
-			avgSize /= 2.f;
+			/*avgSize += Trees[currentTreeIdx].Branches[currentBranch.ParentIdx].BranchSize;
+			avgSize /= 2.f;*/
 		}
 
 		GenerateNextBranchRing(currentSettings, currentTreeIdx, currentBranch, avgBranchDir, avgSize, attachOffset, nextOffset);

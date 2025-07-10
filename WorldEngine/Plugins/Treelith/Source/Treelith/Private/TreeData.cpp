@@ -33,7 +33,6 @@ void FTreeBranch::Next(TArray<FTreeBranch>& branchList, float nextBranchLength, 
 	FVector nextPos = Position + NextDir * nextBranchLength;
 
 	FTreeBranch nextBranch{nextIdx, CurrentIdx, nextBranchLength, nextPos, NextDir, branchShapeIdx};
-
 	branchList.Emplace(nextBranch);
 	ChildIdxs.Add(nextIdx);
 
