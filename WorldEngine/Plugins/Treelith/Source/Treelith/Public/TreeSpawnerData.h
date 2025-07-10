@@ -8,6 +8,23 @@
 #include "TreeSpawnerData.generated.h"
 
 
+UCLASS(BlueprintType, Blueprintable)
+class TREELITH_API ULeafCardTemplate : public UDataAsset
+{
+	GENERATED_BODY()
+
+public:
+
+	UPROPERTY(EditAnywhere)
+	TArray<FVector> Vertices;
+
+	UPROPERTY(EditAnywhere)
+	TArray<int> Triangles;
+
+	UPROPERTY(EditAnywhere)
+	TArray<FVector2D> UVs;
+};
+
 USTRUCT(BlueprintType, Blueprintable)
 struct TREELITH_API FLeafSettings
 {
@@ -38,13 +55,16 @@ struct TREELITH_API FLeafSettings
 	FVector2D LeafCardDivisions{ 3.f, 3.f };
 
 	UPROPERTY(EditAnywhere)
-	FVector2D LeafCardZeroPoint{ 0.f, 0.f };
+	FVector LeafCardZeroPoint{ 0.f, 0.f, 0.f };
 
 	UPROPERTY(EditAnywhere)
 	FVector2D MinMaxPitchRotation{ -PI, PI };
 
 	UPROPERTY(EditAnywhere)
-	FVector2D MinMaxRollhRotation{ -PI, PI };
+	FVector2D MinMaxRollRotation{ -PI, PI };
+
+	UPROPERTY(EditAnywhere)
+	TArray <ULeafCardTemplate*> LeafCardTemplates;
 };
 
 UCLASS(BlueprintType, Blueprintable)

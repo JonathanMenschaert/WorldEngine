@@ -384,11 +384,11 @@ void ATreeSpawner::GenerateBranchCap(const UTreeSpawnerData* currentSettings, co
 
 void ATreeSpawner::GenerateEndBranchLeaves(const UTreeSpawnerData* currentSettings, const FTreeSkeleton& currentTreeSkeleton)
 {
-	TArray<FVector> leafTemplate{};
+	/*TArray<FVector> leafTemplate{};
 	TArray<FVector2D> UVTemplate{};
 	TArray<int> indicesTemplate{};
-	GenerateLeafCard(leafTemplate, UVTemplate, indicesTemplate, currentSettings->LeafSettings.LeafCardHalfDimensions, currentSettings->LeafSettings.LeafCardDivisions, currentSettings->LeafSettings.LeafCardZeroPoint);
-
+	GenerateLeafCard(leafTemplate, UVTemplate, indicesTemplate, currentSettings->LeafSettings.LeafCardHalfDimensions, currentSettings->LeafSettings.LeafCardDivisions, currentSettings->LeafSettings.LeafCardZeroPoint);*/
+	const TArray<ULeafCardTemplate*>& leafCardTemplates{ currentSettings->LeafSettings.LeafCardTemplates };
 	const TArray<int>& endBranches{ currentTreeSkeleton.LeafBranches };
 	for (int i{}; i < endBranches.Num(); ++i)
 	{
@@ -396,10 +396,15 @@ void ATreeSpawner::GenerateEndBranchLeaves(const UTreeSpawnerData* currentSettin
 
 		for (int j{}; j < currentSettings->LeafSettings.NumLeavesPerBranch; ++j)
 		{
+			const ULeafCardTemplate* leafCardTemplate{ leafCardTemplates[Seed.RandRange(0, leafCardTemplates.Num() - 1)] };
+
 			FVector randPitchVector{ Seed.FRandRange(-1.f, 1.f), Seed.FRandRange(-1.f, 1.f), Seed.FRandRange(-1.f, 1.f) };
 			randPitchVector.Normalize();
 
+
+			//Move minmax...rotation to the leafcard data asset
 			float anglePitchBetween{ static_cast<float>(FQuat::FindBetweenNormals(FVector::UpVector, randPitchVector).GetAngle()) };
+			anglePitchBetween = FMath::Clamp(anglePitchBetween, currentSettings->LeafSettings.MinMaxPitchRotation.X, currentSettings->LeafSettings.MinMaxPitchRotation.Y);
 			FVector pitchRotAxis{ FVector::CrossProduct(FVector::UpVector, randPitchVector) };
 			FQuat pitchRotator{ pitchRotAxis, anglePitchBetween };
 
@@ -407,28 +412,29 @@ void ATreeSpawner::GenerateEndBranchLeaves(const UTreeSpawnerData* currentSettin
 			randRollVector.Normalize();
 
 			float angleRollBetween{ static_cast<float>(FQuat::FindBetweenNormals(FVector::UpVector, randRollVector).GetAngle()) };
+			angleRollBetween = FMath::Clamp(angleRollBetween, currentSettings->LeafSettings.MinMaxRollRotation.X, currentSettings->LeafSettings.MinMaxRollRotation.Y);
 			FVector rollRotAxis{ FVector::CrossProduct(FVector::UpVector, randRollVector) };
 			FQuat rollRotator{ rollRotAxis, angleRollBetween };
 
 			int vertOffset{ Vertices.Num() };
 
 
-			for (const FVector& leafVertex : leafTemplate)
+			for (const FVector& leafVertex : leafCardTemplate->Vertices)
 			{			
 				Vertices.Add(pitchRotator.RotateVector(rollRotator.RotateVector(leafVertex + FVector{0.f, 0.f, Seed.FRandRange(-20.f, 20.f)})) + branch.Position);
 			}
 
-			UV0.Append(UVTemplate);
+			UV0.Append(leafCardTemplate->UVs);
 
-			for (int idx{}; idx < indicesTemplate.Num(); ++idx)
+			for (int idx{}; idx < leafCardTemplate->Triangles.Num(); ++idx)
 			{
-				Triangles.Add(indicesTemplate[idx] + vertOffset);
+				Triangles.Add(leafCardTemplate->Triangles[idx] + vertOffset);
 			}
 		}
 	}
 }
 
-void ATreeSpawner::GenerateLeafCard(TArray<FVector>& outLeafCard, TArray<FVector2D>& outUVs, TArray<int>& outTriangles, const FVector2D& cardDimensions, const FVector2D& cardDivisions, const FVector2D& zeroPoint)
+void ATreeSpawner::GenerateLeafCard(TArray<FVector>& outLeafCard, TArray<FVector2D>& outUVs, TArray<int>& outTriangles, const FVector2D& cardDimensions, const FVector2D& cardDivisions, const FVector& zeroPoint)
 {
 	int sizeX{ static_cast<int>(cardDivisions.X)};
 	int sizeY{ static_cast<int>(cardDivisions.Y)};
@@ -439,13 +445,16 @@ void ATreeSpawner::GenerateLeafCard(TArray<FVector>& outLeafCard, TArray<FVector
 	FVector2D fullDimensions{ 2 * cardDimensions };
 	FVector2D divisions{ fullDimensions / cardDivisions };
 	FVector2D uvDivisions{ 1.f / sizeX, 1.f / sizeY };
-
+	//UE_LOG(LogTreelith, Log, TEXT("==========================="));
 	for (int i{}; i <= sizeX; ++i)
 	{
 		for (int j{}; j <= sizeY; ++j)
 		{
-			outLeafCard.Emplace(FVector{ i * divisions.X - cardDimensions.X + zeroPoint.X, j * divisions.Y - cardDimensions.Y, zeroPoint.Y });
+			outLeafCard.Emplace(FVector{ i * divisions.X - cardDimensions.X + zeroPoint.X, j * divisions.Y - cardDimensions.Y + zeroPoint.Y, zeroPoint.Z });
 			outUVs.Emplace(FVector2D{ i * uvDivisions.X, j * uvDivisions.Y });
+
+			//UE_LOG(LogTreelith, Log, TEXT("Vector Values: %s"), *outLeafCard.Last().ToString());
+			//UE_LOG(LogTreelith, Log, TEXT("UV Values: %s"), *outUVs.Last().ToString());
 		}
 	}
 
