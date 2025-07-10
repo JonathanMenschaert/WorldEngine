@@ -39,6 +39,12 @@ struct TREELITH_API FLeafSettings
 
 	UPROPERTY(EditAnywhere)
 	FVector2D LeafCardZeroPoint{ 0.f, 0.f };
+
+	UPROPERTY(EditAnywhere)
+	FVector2D MinMaxPitchRotation{ -PI, PI };
+
+	UPROPERTY(EditAnywhere)
+	FVector2D MinMaxRollhRotation{ -PI, PI };
 };
 
 UCLASS(BlueprintType, Blueprintable)

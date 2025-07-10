@@ -407,8 +407,8 @@ void ATreeSpawner::GenerateEndBranchLeaves(const UTreeSpawnerData* currentSettin
 			randRollVector.Normalize();
 
 			float angleRollBetween{ static_cast<float>(FQuat::FindBetweenNormals(FVector::UpVector, randRollVector).GetAngle()) };
-			FVector rollRotAxis{ FVector::CrossProduct(FVector::UpVector, randRollVector) };
-			FQuat rollRotator{ rollRotAxis, angleRollBetween };
+			//FVector rollRotAxis{ FVector::CrossProduct(FVector::UpVector, randRollVector) };
+			FQuat rollRotator{ FVector::ForwardVector, angleRollBetween };
 
 			int vertOffset{ Vertices.Num() };
 
