@@ -30,7 +30,7 @@ void FTreeBranch::Next(TArray<FTreeBranch>& branchList, float nextBranchLength, 
 		NextDir = -NextDir;
 	}	
 
-	FVector nextPos = Position + NextDir * nextBranchLength;
+	FVector nextPos = Position + NextDir * BranchLength;
 
 	FTreeBranch nextBranch{nextIdx, CurrentIdx, nextBranchLength, nextPos, NextDir, branchShapeIdx};
 	branchList.Emplace(nextBranch);
@@ -40,9 +40,9 @@ void FTreeBranch::Next(TArray<FTreeBranch>& branchList, float nextBranchLength, 
 	ShouldCreateNext = false;
 }
 
-void FTreeBranch::SetUVLength(float uvLength, float uvOffset, float parentBranchLength)
+void FTreeBranch::CalculateUVOffset(float uvLength, float uvOffset, float parentBranchLength)
 {
-	if (parentBranchLength >= 0.f)
+	if (parentBranchLength > 0.f)
 	{
 		UvOffset = uvOffset + (parentBranchLength / uvLength);
 	}

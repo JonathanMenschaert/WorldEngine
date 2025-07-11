@@ -51,6 +51,7 @@ void ATreeSpawner::GenerateTreeMesh()
 	{
 		GenerateNextBranchMesh(TreeSettings[i].TreeSpawnerData, i, Trees[i].Branches[0]);
 	}
+
 	TArray<FVector> Normals{};
 	TArray<FProcMeshTangent> Tangents{};
 	UKismetProceduralMeshLibrary::CalculateTangentsForMesh(Vertices, Triangles, UV0, Normals, Tangents);
@@ -86,7 +87,7 @@ void ATreeSpawner::GenerateTreeSkeleton(const FTreeSettings& currentSettings, FT
 
 	//set up root branch
 	int branchRadiusOffsetIdx{ spawnerData->RootShapes.Num() > 0 ? Seed.RandRange(0, spawnerData->RootShapes.Num() - 1) : -1 };
-	FTreeBranch root{0, -1, static_cast<float>(Seed.FRandRange(20.f, 25.f)), currentSettings.Position, FVector::UpVector, branchRadiusOffsetIdx};
+	FTreeBranch root{0, -1, static_cast<float>(Seed.FRandRange(20.f, 50.f)), currentSettings.Position, FVector::UpVector, branchRadiusOffsetIdx};
 	root.UvOffset = 0.f;
 	currentTreeSkeleton.MinHeight = root.Position.Z;
 	currentTreeSkeleton.MaxHeight = root.Position.Z;
@@ -250,7 +251,7 @@ void ATreeSpawner::GenerateNextBranchMesh(const UTreeSpawnerData* currentSetting
 		{
 			FTreeBranch& childBranch{ Trees[currentTreeIdx].Branches[currentChildIdx] };			
 			childBranch.ParentVertexStart = -1;
-			childBranch.SetUVLength(currentSettings->UVLength, currentBranch.UvOffset, currentBranch.BranchLength);
+			
 			float branchVal = FMath::Acos(FVector::DotProduct(childBranch.BranchDir, currentBranch.BranchDir));
 
 			if (branchVal < closestBranchVal)
@@ -262,6 +263,7 @@ void ATreeSpawner::GenerateNextBranchMesh(const UTreeSpawnerData* currentSetting
 
 		FTreeBranch& closestBranch{ Trees[currentTreeIdx].Branches[closestBranchIdx] };
 		closestBranch.ParentVertexStart = nextOffset;
+		closestBranch.CalculateUVOffset(currentSettings->UVLength, currentBranch.UvOffset, currentBranch.BranchLength);
 
 		//Before the vertex ring is generated, both the size of the tree and the branchdirection are averaged to ensure:
 		//- the branch doesn't look squished when connected to the next branch
@@ -289,8 +291,8 @@ void ATreeSpawner::GenerateNextBranchMesh(const UTreeSpawnerData* currentSetting
 			if (childBranch.ParentVertexStart < 0)
 			{
 				childBranch.ParentVertexStart = Vertices.Num();
-				childBranch.UvOffset = 0.f;
-				GenerateNextBranchRing(currentSettings, currentTreeIdx, currentBranch, childBranch.BranchDir, childBranch.BranchSize, -1, childBranch.ParentVertexStart);
+				childBranch.CalculateUVOffset(currentSettings->UVLength, 0.f, childBranch.BranchLength);
+				GenerateNextBranchRing(currentSettings, currentTreeIdx, currentBranch, childBranch.BranchDir, childBranch.BranchSize, -1, childBranch.ParentVertexStart, true);
 			}
 
 			GenerateNextBranchMesh(currentSettings, currentTreeIdx, childBranch, childBranch.ParentVertexStart);
@@ -299,13 +301,13 @@ void ATreeSpawner::GenerateNextBranchMesh(const UTreeSpawnerData* currentSetting
 	else
 	{
 		//if a branch has no child, a final ring is made, which is then closed off by a cap.
-		currentBranch.SetUVLength(currentSettings->UVLength, currentBranch.UvOffset, currentBranch.BranchLength);
+		currentBranch.CalculateUVOffset(currentSettings->UVLength, currentBranch.UvOffset, currentBranch.BranchLength);
 		GenerateNextBranchRing(currentSettings, currentTreeIdx, currentBranch, currentBranch.BranchDir, currentBranch.BranchSize / 2.f, attachOffset, nextOffset);
 		GenerateBranchCap(currentSettings, currentTreeIdx, currentBranch.Position, nextOffset, true);
 	}
 }
 
-void ATreeSpawner::GenerateNextBranchRing(const UTreeSpawnerData* currentSettings, int currentTreeIdx, const FTreeBranch& currentBranch, const FVector& upVector, float minRingRadius, int prevRingOffset, int currentRingOffset)
+void ATreeSpawner::GenerateNextBranchRing(const UTreeSpawnerData* currentSettings, int currentTreeIdx, const FTreeBranch& currentBranch, const FVector& upVector, float minRingRadius, int prevRingOffset, int currentRingOffset, bool ignoreUVOffset)
 {
 	int numSides{ currentSettings->NumSides };
 	Vertices.AddDefaulted(numSides + 1);
@@ -340,6 +342,7 @@ void ATreeSpawner::GenerateNextBranchRing(const UTreeSpawnerData* currentSetting
 	}
 
 	float normalizedVertexColor{ Trees[currentTreeIdx].GetNormalizedHeight(currentBranch.Position.Z) };
+	float currentUVOffset{ !ignoreUVOffset ? currentBranch.UvOffset : 0.f };
 
 	for (int i{}; i < numSides; ++i)
 	{
@@ -351,7 +354,7 @@ void ATreeSpawner::GenerateNextBranchRing(const UTreeSpawnerData* currentSetting
 		FVector nextVert = vertexRotator.RotateVector(FVector::RightVector * (minRingRadius + additionalDistance * radiusOffsetMultiplier));
 		nextVert = branchRotator.RotateVector(nextVert) + currentBranch.Position;
 		Vertices[currentRingOffset + i] = nextVert;
-		UV0[currentRingOffset + i] = FVector2D{ 1.f / numSides * i, currentBranch.UvOffset };
+		UV0[currentRingOffset + i] = FVector2D{ 1.f / numSides * i, currentUVOffset };
 		VertexColors[currentRingOffset + i] = FLinearColor{normalizedVertexColor, normalizedVertexColor, normalizedVertexColor};
 	}
 	Vertices[currentRingOffset + numSides] = Vertices[currentRingOffset];
@@ -474,16 +477,13 @@ void ATreeSpawner::GenerateLeafCard(TArray<FVector>& outLeafCard, TArray<FVector
 	FVector2D fullDimensions{ 2 * cardDimensions };
 	FVector2D divisions{ fullDimensions / cardDivisions };
 	FVector2D uvDivisions{ 1.f / sizeX, 1.f / sizeY };
-	//UE_LOG(LogTreelith, Log, TEXT("==========================="));
+	
 	for (int i{}; i <= sizeX; ++i)
 	{
 		for (int j{}; j <= sizeY; ++j)
 		{
 			outLeafCard.Emplace(FVector{ i * divisions.X - cardDimensions.X + zeroPoint.X, j * divisions.Y - cardDimensions.Y + zeroPoint.Y, zeroPoint.Z });
 			outUVs.Emplace(FVector2D{ i * uvDivisions.X, j * uvDivisions.Y });
-
-			//UE_LOG(LogTreelith, Log, TEXT("Vector Values: %s"), *outLeafCard.Last().ToString());
-			//UE_LOG(LogTreelith, Log, TEXT("UV Values: %s"), *outUVs.Last().ToString());
 		}
 	}
 

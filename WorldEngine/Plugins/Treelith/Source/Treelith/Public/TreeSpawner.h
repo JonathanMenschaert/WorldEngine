@@ -80,7 +80,7 @@ private:
 	UMaterialInterface* LeafMaterial;
 
 	void GenerateNextBranchMesh(const UTreeSpawnerData* currentSettings, int currentTreeIdx, FTreeBranch& currentBranch,int attachOffset = -1);
-	void GenerateNextBranchRing(const UTreeSpawnerData* currentSettings, int currentTreeIdx, const FTreeBranch& currentBranch, const FVector& upVector, float minRingRadius, int prevRingOffset, int currentRingOffset);
+	void GenerateNextBranchRing(const UTreeSpawnerData* currentSettings, int currentTreeIdx, const FTreeBranch& currentBranch, const FVector& upVector, float minRingRadius, int prevRingOffset, int currentRingOffset, bool ignoreUVOffset = false);
 	void GenerateBranchCap(const UTreeSpawnerData* currentSettings, int currentTreeIdx, const FVector& position, int capStartOffset, bool copyRing);
 
 	void GenerateEndBranchLeaves(const UTreeSpawnerData* currentSettings, const FTreeSkeleton& currentTreeSkeleton);
