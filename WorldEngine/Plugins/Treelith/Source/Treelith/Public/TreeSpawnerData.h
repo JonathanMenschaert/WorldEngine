@@ -61,10 +61,14 @@ struct TREELITH_API FLeafSettings
 	FVector LeafCardZeroPoint{ 0.f, 0.f, 0.f };
 
 	UPROPERTY(EditAnywhere)
+	FVector2D MinMaxYawRotation{ -PI, PI };
+
+	UPROPERTY(EditAnywhere)
 	FVector2D MinMaxPitchRotation{ -PI, PI };
 
 	UPROPERTY(EditAnywhere)
 	FVector2D MinMaxRollRotation{ -PI, PI };
+
 
 	UPROPERTY(EditAnywhere)
 	TArray <ULeafCardTemplate*> LeafCardTemplates;

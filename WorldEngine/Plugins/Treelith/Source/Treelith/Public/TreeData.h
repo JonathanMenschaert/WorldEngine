@@ -17,7 +17,8 @@ UENUM(BlueprintType, Blueprintable)
 enum class ELeafType : uint8
 {
 	NONE,
-	OAK
+	OAK,
+	PINE
 };
 
 UENUM(BlueprintType, Blueprintable)

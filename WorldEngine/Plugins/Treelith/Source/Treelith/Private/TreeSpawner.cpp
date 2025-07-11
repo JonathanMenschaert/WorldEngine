@@ -56,6 +56,8 @@ void ATreeSpawner::GenerateTreeMesh()
 	TArray<FProcMeshTangent> Tangents{};
 	UKismetProceduralMeshLibrary::CalculateTangentsForMesh(Vertices, Triangles, UV0, Normals, Tangents);
 	TreeMesh->CreateMeshSection_LinearColor(0, Vertices, Triangles, Normals, UV0, VertexColors, Tangents, true);
+	TreeMesh->SetMaterial(0, BarkMaterial);
+
 
 	//Reset seed to initial to ensure the leaves generate the same way if the tree mesh is regenerated for lower polycounts
 	Seed.Reset();
@@ -74,9 +76,6 @@ void ATreeSpawner::GenerateTreeMesh()
 
 	UKismetProceduralMeshLibrary::CalculateTangentsForMesh(Vertices, Triangles, UV0, Normals, Tangents);
 	TreeMesh->CreateMeshSection_LinearColor(1, Vertices, Triangles, Normals, UV0, VertexColors, Tangents, false);
-
-
-	TreeMesh->SetMaterial(0, BarkMaterial);
 	TreeMesh->SetMaterial(1, LeafMaterial);
 }
 
@@ -277,8 +276,8 @@ void ATreeSpawner::GenerateNextBranchMesh(const UTreeSpawnerData* currentSetting
 			avgBranchDir += closestBranch.BranchDir;
 			avgBranchDir.Normalize();
 
-			/*avgSize += Trees[currentTreeIdx].Branches[currentBranch.ParentIdx].BranchSize;
-			avgSize /= 2.f;*/
+			avgSize += Trees[currentTreeIdx].Branches[currentBranch.ParentIdx].BranchSize;
+			avgSize /= 2.f;
 		}
 
 		GenerateNextBranchRing(currentSettings, currentTreeIdx, currentBranch, avgBranchDir, avgSize, attachOffset, nextOffset);
@@ -421,38 +420,25 @@ void ATreeSpawner::GenerateEndBranchLeaves(const UTreeSpawnerData* currentSettin
 	const TArray<ULeafCardTemplate*>& leafCardTemplates{ currentSettings->LeafSettings.LeafCardTemplates };
 	const TArray<int>& endBranches{ currentTreeSkeleton.LeafBranches };
 
+	auto& leafRandFunction{ UTreeFunctionRegistry::GetLeafRandomizationFunction(currentSettings->LeafSettings.LeafType) };
+	auto& leafSettings{ currentSettings->LeafSettings };
+
 	for (int i{}; i < endBranches.Num(); ++i)
 	{
 		const FTreeBranch& branch{ currentTreeSkeleton.Branches[endBranches[i]] };
 
-		for (int j{}; j < currentSettings->LeafSettings.NumLeavesPerBranch; ++j)
+		for (int j{}; j < leafSettings.NumLeavesPerBranch; ++j)
 		{
 			const ULeafCardTemplate* leafCardTemplate{ leafCardTemplates[Seed.RandRange(0, leafCardTemplates.Num() - 1)] };
 
-			FVector randPitchVector{ Seed.FRandRange(-1.f, 1.f), Seed.FRandRange(-1.f, 1.f), Seed.FRandRange(-1.f, 1.f) };
-			randPitchVector.Normalize();
-
-
-			//Move minmax...rotation to the leafcard data asset
-			float anglePitchBetween{ static_cast<float>(FQuat::FindBetweenNormals(FVector::UpVector, randPitchVector).GetAngle()) };
-			anglePitchBetween = FMath::Clamp(anglePitchBetween, currentSettings->LeafSettings.MinMaxPitchRotation.X, currentSettings->LeafSettings.MinMaxPitchRotation.Y);
-			FVector pitchRotAxis{ FVector::CrossProduct(FVector::UpVector, randPitchVector) };
-			FQuat pitchRotator{ pitchRotAxis, anglePitchBetween };
-
-			FVector randRollVector{ Seed.FRandRange(-1.f, 1.f), Seed.FRandRange(-1.f, 1.f), Seed.FRandRange(-1.f, 1.f) };
-			randRollVector.Normalize();
-
-			float angleRollBetween{ static_cast<float>(FQuat::FindBetweenNormals(FVector::UpVector, randRollVector).GetAngle()) };
-			angleRollBetween = FMath::Clamp(angleRollBetween, currentSettings->LeafSettings.MinMaxRollRotation.X, currentSettings->LeafSettings.MinMaxRollRotation.Y);
-			FVector rollRotAxis{ FVector::CrossProduct(FVector::UpVector, randRollVector) };
-			FQuat rollRotator{ rollRotAxis, angleRollBetween };
+			FQuat leafRotator{ leafRandFunction(Seed, leafSettings.MinMaxYawRotation, leafSettings.MinMaxPitchRotation, leafSettings.MinMaxRollRotation, branch.BranchDir) };
 
 			int vertOffset{ Vertices.Num() };
 
 
 			for (const FVector& leafVertex : leafCardTemplate->Vertices)
 			{			
-				Vertices.Add(pitchRotator.RotateVector(rollRotator.RotateVector(leafVertex + FVector{0.f, 0.f, Seed.FRandRange(-20.f, 20.f)})) + branch.Position);
+				Vertices.Add(leafRotator.RotateVector(leafVertex + FVector{0.f, 0.f, Seed.FRandRange(-20.f, 20.f)} + leafSettings.LeafCardZeroPoint) + branch.Position);
 			}
 
 			VertexColors.Append(leafCardTemplate->VertexColors);
