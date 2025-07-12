@@ -413,32 +413,46 @@ void ATreeSpawner::GenerateBranchCap(const UTreeSpawnerData* currentSettings, in
 
 void ATreeSpawner::GenerateEndBranchLeaves(const UTreeSpawnerData* currentSettings, const FTreeSkeleton& currentTreeSkeleton)
 {
-	/*TArray<FVector> leafTemplate{};
-	TArray<FVector2D> UVTemplate{};
-	TArray<int> indicesTemplate{};
-	GenerateLeafCard(leafTemplate, UVTemplate, indicesTemplate, currentSettings->LeafSettings.LeafCardHalfDimensions, currentSettings->LeafSettings.LeafCardDivisions, currentSettings->LeafSettings.LeafCardZeroPoint);*/
+
 	const TArray<ULeafCardTemplate*>& leafCardTemplates{ currentSettings->LeafSettings.LeafCardTemplates };
 	const TArray<int>& endBranches{ currentTreeSkeleton.LeafBranches };
-
-	auto& leafRandFunction{ UTreeFunctionRegistry::GetLeafRandomizationFunction(currentSettings->LeafSettings.LeafType) };
 	auto& leafSettings{ currentSettings->LeafSettings };
 
 	for (int i{}; i < endBranches.Num(); ++i)
 	{
 		const FTreeBranch& branch{ currentTreeSkeleton.Branches[endBranches[i]] };
+		FVector branchRight{ FVector::CrossProduct(FVector::UpVector, branch.BranchDir) };
+		branchRight.Normalize();
 
 		for (int j{}; j < leafSettings.NumLeavesPerBranch; ++j)
 		{
 			const ULeafCardTemplate* leafCardTemplate{ leafCardTemplates[Seed.RandRange(0, leafCardTemplates.Num() - 1)] };
 
-			FQuat leafRotator{ leafRandFunction(Seed, leafSettings.MinMaxYawRotation, leafSettings.MinMaxPitchRotation, leafSettings.MinMaxRollRotation, branch.BranchDir) };
+			float rollRotValue{ static_cast<float>(Seed.FRandRange(leafSettings.MinMaxRollRotation.X, leafSettings.MinMaxRollRotation.Y)) };
+
+			//Calculate yaw values 
+			FVector signVector{ FVector::CrossProduct(FVector::RightVector, branchRight).GetSafeNormal() };
+			float dotValue{ static_cast<float>(FVector::DotProduct(FVector::UpVector, signVector)) };
+			float signValue{ dotValue >= 0.f ? 1.f : -1.f };
+			float yawDiffValue{ static_cast<float>(FMath::Acos(FVector::DotProduct(FVector::RightVector, branchRight))) };
+			float yawRotValue{ static_cast<float>(Seed.FRandRange(leafSettings.MinMaxYawRotation.X, leafSettings.MinMaxYawRotation.Y)) };
+
+			float pitchRotValue{ static_cast<float>(Seed.FRandRange(leafSettings.MinMaxPitchRotation.X, leafSettings.MinMaxPitchRotation.Y)) };
+
+			FQuat rotationQuat{ FVector::UpVector, yawRotValue };
+			FVector rotationAxis{ rotationQuat.RotateVector(branchRight) };
+
+			FQuat leafRollRotator{ FVector::ForwardVector, rollRotValue };
+			FQuat leafYawRotator{ FVector::UpVector, yawDiffValue * signValue + yawRotValue };
+			FQuat leafPitchRotator{ rotationAxis, pitchRotValue };
+
+			FQuat leafRotator{ leafYawRotator * leafRollRotator * leafPitchRotator };
 
 			int vertOffset{ Vertices.Num() };
 
-
 			for (const FVector& leafVertex : leafCardTemplate->Vertices)
 			{			
-				Vertices.Add(leafRotator.RotateVector(leafVertex + FVector{0.f, 0.f, Seed.FRandRange(-20.f, 20.f)} + leafSettings.LeafCardZeroPoint) + branch.Position);
+				Vertices.Add(leafRotator.RotateVector(leafVertex + leafSettings.LeafCardZeroPoint) + branch.Position);
 			}
 
 			VertexColors.Append(leafCardTemplate->VertexColors);

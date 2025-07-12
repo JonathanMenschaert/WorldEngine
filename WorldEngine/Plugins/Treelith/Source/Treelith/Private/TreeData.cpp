@@ -11,11 +11,11 @@ FTreeBranch::FTreeBranch()
 
 
 FTreeBranch::FTreeBranch(int currentIdx, int parentIdx, float currentBranchLength, const FVector& position, const FVector& direction, int branchShapeIdx)
-	: CurrentIdx{currentIdx}
-	, ParentIdx{ parentIdx }
-	, Position{ position }
+	: Position{ position }
 	, BranchDir{ direction }
 	, NextDir{ direction }
+	, CurrentIdx{currentIdx}
+	, ParentIdx{ parentIdx }
 	, BranchLength{currentBranchLength}
 	, BranchShapeIdx{branchShapeIdx}
 {
