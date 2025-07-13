@@ -7,18 +7,24 @@
 #include "TreeData.generated.h"
 
 UENUM(BlueprintType, Blueprintable)
-enum class ETreeType : uint8
+enum class EMaterialSlot : uint8
 {
-	DEFAULT,
-	OAK
-};
-
-UENUM(BlueprintType, Blueprintable)
-enum class ELeafType : uint8
-{
-	NONE,
-	OAK,
-	PINE
+	SLOT1 = 0,
+	SLOT2 = 1,
+	SLOT3 = 2,
+	SLOT4 = 3,
+	SLOT5 = 4,
+	SLOT6 = 5,
+	SLOT7 = 6,
+	SLOT8 = 7,
+	SLOT9 = 8,
+	SLOT10 = 9,
+	SLOT11 = 10,
+	SLOT12 = 11,
+	SLOT13 = 12,
+	SLOT14 = 13,
+	SLOT15 = 14,
+	SLOT16 = 15
 };
 
 UENUM(BlueprintType, Blueprintable)
@@ -26,6 +32,21 @@ enum class ETreeRandomType : uint8
 {
 	DEFAULT,
 	OAK
+};
+
+USTRUCT(BlueprintType, Blueprintable)
+struct TREELITH_API FBoundary3
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere)
+	FVector2D MinMaxX{};
+
+	UPROPERTY(EditAnywhere)
+	FVector2D MinMaxY{};
+
+	UPROPERTY(EditAnywhere)
+	FVector2D MinMaxZ{};
 };
 
 USTRUCT(BlueprintType, Blueprintable)

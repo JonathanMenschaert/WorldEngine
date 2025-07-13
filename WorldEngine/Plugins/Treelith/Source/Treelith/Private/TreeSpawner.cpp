@@ -86,13 +86,14 @@ void ATreeSpawner::GenerateTreeSkeleton(const FTreeSettings& currentSettings, FT
 
 	//set up root branch
 	int branchRadiusOffsetIdx{ spawnerData->RootShapes.Num() > 0 ? Seed.RandRange(0, spawnerData->RootShapes.Num() - 1) : -1 };
-	FTreeBranch root{0, -1, static_cast<float>(Seed.FRandRange(20.f, 50.f)), currentSettings.Position, FVector::UpVector, branchRadiusOffsetIdx};
+	FTreeBranch root{0, -1, static_cast<float>(Seed.FRandRange(spawnerData->MinRootLength, spawnerData->MaxRootLength)), currentSettings.Position, FVector::UpVector, branchRadiusOffsetIdx};
 	root.UvOffset = 0.f;
 	currentTreeSkeleton.MinHeight = root.Position.Z;
 	currentTreeSkeleton.MaxHeight = root.Position.Z;
+
 	//Grab correct randomizer function from the registry and update root
 	auto& randomizeBranchLeaf = UTreeFunctionRegistry::GetTreeRandomizationFunction(spawnerData->RandomType);
-	randomizeBranchLeaf(Seed, BranchDestinations, currentSettings.Position, root.BranchDir, spawnerData->BranchDestinationAmount);
+	randomizeBranchLeaf(Seed, BranchDestinations, spawnerData->RandomBranchBoundaries, currentSettings.Position, spawnerData->BranchDestinationAmount);
 	root.NextDir = root.BranchDir;
 
 	//Generate trunk
@@ -109,7 +110,7 @@ void ATreeSpawner::GenerateTreeSkeleton(const FTreeSettings& currentSettings, FT
 		for (FTreeBranchDestination& branchDest : BranchDestinations)
 		{
 			float d = FVector::Distance(currentBranches[currentBranchIdx].Position, branchDest.Position);
-			if (d < spawnerData->LeafSettings.MaxLeafDistance)
+			if (d < spawnerData->MaxLeafDistance)
 			{
 				foundLeaf = true;
 			}			
@@ -138,8 +139,6 @@ void ATreeSpawner::GrowTreeSkeleton(const UTreeSpawnerData* currentSettings, FTr
 	UE_LOG(LogTreelith, Log, TEXT("Branch Growing..."));
 	int closestBranchIdx{-1};
 
-	const FLeafSettings& leafSettings{ currentSettings->LeafSettings };
-
 	//Check what leaves are in distance of the branches
 	for (auto& branchDest : BranchDestinations)
 	{
@@ -147,12 +146,12 @@ void ATreeSpawner::GrowTreeSkeleton(const UTreeSpawnerData* currentSettings, FTr
 		for (auto& branch : currentTreeSkeleton.Branches)
 		{
 			float d = FVector::Distance(branchDest.Position, branch.Position);
-			if (d < leafSettings.MinLeafDistance)
+			if (d < currentSettings->MinLeafDistance)
 			{
 				branchDest.IsReached = true;
 				closestBranchIdx = branch.CurrentIdx;
 			}
-			else if (d > leafSettings.MaxLeafDistance)
+			else if (d > currentSettings->MaxLeafDistance)
 			{
 				continue;
 			}
@@ -193,8 +192,6 @@ void ATreeSpawner::GrowTreeSkeleton(const UTreeSpawnerData* currentSettings, FTr
 
 void ATreeSpawner::FinalizeTreeSkeleton(const UTreeSpawnerData* currentSettings, FTreeSkeleton& currentTreeSkeleton)
 {
-	const FLeafSettings& leafSettings{ currentSettings->LeafSettings };
-
 	//Loop over all branches to add the correct sizing to the trunk and branches.
 	for (FTreeBranch& branch : currentTreeSkeleton.Branches)
 	{
@@ -206,7 +203,7 @@ void ATreeSpawner::FinalizeTreeSkeleton(const UTreeSpawnerData* currentSettings,
 			IncrementBranchSizeAndPropagate(currentTreeSkeleton, branch);
 		}
 
-		if (branch.ChildIdxs.Num() <= leafSettings.MaxChildPerLeafBranch && branch.CurrentIdx >= leafSettings.IgnoreAmountBranchesFromBottom)
+		if (branch.ChildIdxs.Num() <= currentSettings->MaxChildPerLeafBranch && branch.CurrentIdx >= currentSettings->IgnoreAmountBranchesFromBottom)
 		{
 			currentTreeSkeleton.LeafBranches.Add(branch.CurrentIdx);
 		}
@@ -414,9 +411,9 @@ void ATreeSpawner::GenerateBranchCap(const UTreeSpawnerData* currentSettings, in
 void ATreeSpawner::GenerateEndBranchLeaves(const UTreeSpawnerData* currentSettings, const FTreeSkeleton& currentTreeSkeleton)
 {
 
-	const TArray<ULeafCardTemplate*>& leafCardTemplates{ currentSettings->LeafSettings.LeafCardTemplates };
+	const TArray<ULeafCardTemplate*>& leafCardTemplates{ currentSettings->LeafCardTemplates };
+	const FBoundary3& leafRotations{ currentSettings->LeafRotations };
 	const TArray<int>& endBranches{ currentTreeSkeleton.LeafBranches };
-	auto& leafSettings{ currentSettings->LeafSettings };
 
 	for (int i{}; i < endBranches.Num(); ++i)
 	{
@@ -424,20 +421,19 @@ void ATreeSpawner::GenerateEndBranchLeaves(const UTreeSpawnerData* currentSettin
 		FVector branchRight{ FVector::CrossProduct(FVector::UpVector, branch.BranchDir) };
 		branchRight.Normalize();
 
-		for (int j{}; j < leafSettings.NumLeavesPerBranch; ++j)
+		for (int j{}; j < currentSettings->NumLeavesPerBranch; ++j)
 		{
 			const ULeafCardTemplate* leafCardTemplate{ leafCardTemplates[Seed.RandRange(0, leafCardTemplates.Num() - 1)] };
-
-			float rollRotValue{ static_cast<float>(Seed.FRandRange(leafSettings.MinMaxRollRotation.X, leafSettings.MinMaxRollRotation.Y)) };
+			float rollRotValue{ static_cast<float>(Seed.FRandRange(leafRotations.MinMaxX.X, leafRotations.MinMaxX.Y)) };
 
 			//Calculate yaw values 
 			FVector signVector{ FVector::CrossProduct(FVector::RightVector, branchRight).GetSafeNormal() };
 			float dotValue{ static_cast<float>(FVector::DotProduct(FVector::UpVector, signVector)) };
 			float signValue{ dotValue >= 0.f ? 1.f : -1.f };
 			float yawDiffValue{ static_cast<float>(FMath::Acos(FVector::DotProduct(FVector::RightVector, branchRight))) };
-			float yawRotValue{ static_cast<float>(Seed.FRandRange(leafSettings.MinMaxYawRotation.X, leafSettings.MinMaxYawRotation.Y)) };
+			float yawRotValue{ static_cast<float>(Seed.FRandRange(leafRotations.MinMaxZ.X, leafRotations.MinMaxZ.Y)) };
 
-			float pitchRotValue{ static_cast<float>(Seed.FRandRange(leafSettings.MinMaxPitchRotation.X, leafSettings.MinMaxPitchRotation.Y)) };
+			float pitchRotValue{ static_cast<float>(Seed.FRandRange(leafRotations.MinMaxY.X, leafRotations.MinMaxY.Y)) };
 
 			FQuat rotationQuat{ FVector::UpVector, yawRotValue };
 			FVector rotationAxis{ rotationQuat.RotateVector(branchRight) };
@@ -452,7 +448,7 @@ void ATreeSpawner::GenerateEndBranchLeaves(const UTreeSpawnerData* currentSettin
 
 			for (const FVector& leafVertex : leafCardTemplate->Vertices)
 			{			
-				Vertices.Add(leafRotator.RotateVector(leafVertex + leafSettings.LeafCardZeroPoint) + branch.Position);
+				Vertices.Add(leafRotator.RotateVector(leafVertex + currentSettings->LeafCardZeroPoint) + branch.Position);
 			}
 
 			VertexColors.Append(leafCardTemplate->VertexColors);
