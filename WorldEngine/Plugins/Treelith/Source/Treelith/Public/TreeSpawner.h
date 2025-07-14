@@ -53,7 +53,7 @@ private:
 	void FinalizeTreeSkeleton(const UTreeSpawnerData* currentSettings, FTreeSkeleton& currentTreeSkeleton);
 
 	void UpdateTreeHeightMinMax(FTreeSkeleton& currentTreeSkeleton, float zPos);
-	void IncrementBranchSizeAndPropagate(FTreeSkeleton& currentTreeSkeleton, FTreeBranch& currentBranch, int size = 2);
+	void IncrementBranchSizeAndPropagate(FTreeSkeleton& currentTreeSkeleton, FTreeBranch& currentBranch, float size = 2.f);
 	
 	//Tree Mesh generation
 

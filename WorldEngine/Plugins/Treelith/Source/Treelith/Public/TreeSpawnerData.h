@@ -52,6 +52,9 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Tree|Skeleton Generation|General")
 	float MinBranchRadius{ 6.f };
 
+	UPROPERTY(EditAnywhere, Category = "Tree|Skeleton Generation|General")
+	float BranchAddRadius{ 2.f };
+
 	//Root Skeleton Generation
 	UPROPERTY(EditAnywhere, Category = "Tree|Skeleton Generation|Root")
 	FBoundary3 RandomRootBoundaries{};

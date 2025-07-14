@@ -218,7 +218,7 @@ void ATreeSpawner::FinalizeTreeSkeleton(const UTreeSpawnerData* currentSettings,
 		//Branches with no child branches are added to a separate array to add the leaf foliage to in the mesh generation stage
 		if (branch.ChildIdxs.Num() == 0)
 		{
-			IncrementBranchSizeAndPropagate(currentTreeSkeleton, branch);
+			IncrementBranchSizeAndPropagate(currentTreeSkeleton, branch, currentSettings->BranchAddRadius);
 		}
 
 		if (branch.ChildIdxs.Num() <= currentSettings->MaxChildPerLeafBranch && branch.CurrentIdx >= currentSettings->IgnoreAmountBranchesFromBottom)
@@ -241,7 +241,7 @@ void ATreeSpawner::UpdateTreeHeightMinMax(FTreeSkeleton& currentTreeSkeleton, fl
 	}
 }
 
-void ATreeSpawner::IncrementBranchSizeAndPropagate(FTreeSkeleton& currentTreeSkeleton, FTreeBranch& currentBranch, int size)
+void ATreeSpawner::IncrementBranchSizeAndPropagate(FTreeSkeleton& currentTreeSkeleton, FTreeBranch& currentBranch, float size)
 {
 	currentBranch.BranchSize += size;
 	if (currentBranch.ParentIdx >= 0)
@@ -537,6 +537,3 @@ void ATreeSpawner::Debug()
 		}
 	}
 }
-
-
-
