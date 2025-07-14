@@ -58,8 +58,8 @@ void ATreeSpawner::GenerateTreeMesh()
 		GenerateNextBranchMesh(TreeSettings[i].TreeSpawnerData, i, Trees[i].Branches[0]);
 		TArray<FVector2D> temp;
 		temp.Init(FVector2D{ static_cast<float>(TreeSettings[i].TreeSpawnerData->TreeMaterialSlot) / static_cast<float>(EMaterialSlot::COUNT), 0.5f }, UV0.Num() - prevAmountUVValues);
-		UV0.Append(temp);
-		prevAmountUVValues = UV1.Num();
+		UV1.Append(temp);
+		prevAmountUVValues = UV0.Num();
 	}
 
 	TArray<FVector> Normals{};
