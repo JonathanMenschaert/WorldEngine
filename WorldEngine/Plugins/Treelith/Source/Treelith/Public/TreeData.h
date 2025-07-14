@@ -24,7 +24,8 @@ enum class EMaterialSlot : uint8
 	SLOT13 = 12,
 	SLOT14 = 13,
 	SLOT15 = 14,
-	SLOT16 = 15
+	SLOT16 = 15,
+	COUNT = 16
 };
 
 UENUM(BlueprintType, Blueprintable)

@@ -112,7 +112,6 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Leaves|Skeleton Generation")
 	int IgnoreAmountBranchesFromBottom{ 2 };
 
-	//Leaf Mesh Generation
 	UPROPERTY(EditAnywhere, Category = "Leaves|Mesh Generation")
 	FVector LeafCardZeroPoint{ 0.f, 0.f, 0.f };
 

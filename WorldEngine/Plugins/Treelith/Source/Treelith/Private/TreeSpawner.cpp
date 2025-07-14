@@ -42,20 +42,30 @@ void ATreeSpawner::GenerateTreeSkeleton()
 void ATreeSpawner::GenerateTreeMesh()
 {
 	//TODO add amount to reserve for performance reasons
+
+	TArray<FVector2D> emptyUVs;
+
 	Vertices.Empty();
 	Triangles.Empty();
 	UV0.Empty();
+	UV1.Empty();
+	VertexColors.Empty();
 	TreeMesh->ClearAllMeshSections();
 
+	int prevAmountUVValues{0};
 	for (int i{}; i < TreeSettings.Num(); ++i)
 	{
 		GenerateNextBranchMesh(TreeSettings[i].TreeSpawnerData, i, Trees[i].Branches[0]);
+		TArray<FVector2D> temp;
+		temp.Init(FVector2D{ static_cast<float>(TreeSettings[i].TreeSpawnerData->TreeMaterialSlot) / static_cast<float>(EMaterialSlot::COUNT), 0.5f }, UV0.Num() - prevAmountUVValues);
+		UV0.Append(temp);
+		prevAmountUVValues = UV1.Num();
 	}
 
 	TArray<FVector> Normals{};
 	TArray<FProcMeshTangent> Tangents{};
 	UKismetProceduralMeshLibrary::CalculateTangentsForMesh(Vertices, Triangles, UV0, Normals, Tangents);
-	TreeMesh->CreateMeshSection_LinearColor(0, Vertices, Triangles, Normals, UV0, VertexColors, Tangents, true);
+	TreeMesh->CreateMeshSection_LinearColor(0, Vertices, Triangles, Normals, UV0, UV1, emptyUVs, emptyUVs, VertexColors, Tangents, true);
 	TreeMesh->SetMaterial(0, BarkMaterial);
 
 
@@ -64,19 +74,27 @@ void ATreeSpawner::GenerateTreeMesh()
 	Vertices.Empty();
 	Triangles.Empty();
 	UV0.Empty();
+	UV1.Empty();
 	VertexColors.Empty();
 	Normals.Empty();
 	Tangents.Empty();
 
-
+	prevAmountUVValues = 0;
 	for (int i{}; i < TreeSettings.Num(); ++i)
 	{
 		GenerateEndBranchLeaves(TreeSettings[i].TreeSpawnerData, Trees[i]);
+		TArray<FVector2D> temp;
+		temp.Init(FVector2D{ static_cast<float>(TreeSettings[i].TreeSpawnerData->LeafMaterialSlot) / static_cast<float>(EMaterialSlot::COUNT), 0.5f }, UV0.Num() - prevAmountUVValues);
+		UV1.Append(temp);
+		prevAmountUVValues = UV0.Num();
 	}
 
-	UKismetProceduralMeshLibrary::CalculateTangentsForMesh(Vertices, Triangles, UV0, Normals, Tangents);
-	TreeMesh->CreateMeshSection_LinearColor(1, Vertices, Triangles, Normals, UV0, VertexColors, Tangents, false);
-	TreeMesh->SetMaterial(1, LeafMaterial);
+	if (Vertices.Num() > 0)
+	{
+		UKismetProceduralMeshLibrary::CalculateTangentsForMesh(Vertices, Triangles, UV0, Normals, Tangents);
+		TreeMesh->CreateMeshSection_LinearColor(1, Vertices, Triangles, Normals, UV0, UV1, emptyUVs, emptyUVs, VertexColors, Tangents, false);
+		TreeMesh->SetMaterial(1, LeafMaterial);
+	}
 }
 
 void ATreeSpawner::GenerateTreeSkeleton(const FTreeSettings& currentSettings, FTreeSkeleton& currentTreeSkeleton)
