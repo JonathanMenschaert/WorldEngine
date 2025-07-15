@@ -106,6 +106,7 @@ void ATreeSpawner::GenerateTreeSkeleton(const FTreeSettings& currentSettings, FT
 	int branchRadiusOffsetIdx{ spawnerData->RootShapes.Num() > 0 ? Seed.RandRange(0, spawnerData->RootShapes.Num() - 1) : -1 };
 	FTreeBranch root{0, -1, static_cast<float>(Seed.FRandRange(spawnerData->MinRootLength, spawnerData->MaxRootLength)), currentSettings.Position, FVector::UpVector, branchRadiusOffsetIdx};
 	root.UvOffset = 0.f;
+	root.IsRoot = true;
 	currentTreeSkeleton.MinHeight = root.Position.Z;
 	currentTreeSkeleton.MaxHeight = root.Position.Z;
 
@@ -119,10 +120,11 @@ void ATreeSpawner::GenerateTreeSkeleton(const FTreeSettings& currentSettings, FT
 	currentBranches.Add(root);
 
 	int currentBranchIdx{ currentBranches.Num() - 1 };
+	int maxTrunkBranches{ spawnerData->MaxTrunkBranches };
 	bool foundLeaf{ false };
 
 	//Continue to grow until a leaf comes within distance
-	while (!foundLeaf)
+	while (!foundLeaf && maxTrunkBranches > 0)
 	{
 		UE_LOG(LogTreelith, Log, TEXT("Trunk Growing..."));
 		for (FTreeBranchDestination& branchDest : BranchDestinations)
@@ -138,10 +140,13 @@ void ATreeSpawner::GenerateTreeSkeleton(const FTreeSettings& currentSettings, FT
 			auto& branch{ currentTreeSkeleton.Branches[currentBranchIdx] };
 			branchRadiusOffsetIdx = spawnerData->BranchShapes.Num() > 0 ? Seed.RandRange(0, spawnerData->BranchShapes.Num() - 1) : -1;
 			FTreeBranch nextBranch{ branch.Next(Seed.FRandRange(spawnerData->MinBranchLength, spawnerData->MaxBranchLength), currentBranches.Num(), Seed.RandRange(0, spawnerData->BranchShapes.Num() - 1)) };
+			nextBranch.IsRoot = true;
 			currentBranchIdx = nextBranch.CurrentIdx;
 			currentTreeSkeleton.MinHeight = (nextBranch.Position.Z - root.Position.Z) / 2.f;
 
 			currentTreeSkeleton.Branches.Emplace(nextBranch);
+
+			--maxTrunkBranches;
 		}
 	}
 
@@ -225,7 +230,7 @@ void ATreeSpawner::FinalizeTreeSkeleton(const UTreeSpawnerData* currentSettings,
 			IncrementBranchSizeAndPropagate(currentTreeSkeleton, branch, currentSettings->BranchAddRadius);
 		}
 
-		if (branch.ChildIdxs.Num() <= currentSettings->MaxChildPerLeafBranch && branch.CurrentIdx >= currentSettings->IgnoreAmountBranchesFromBottom)
+		if (branch.ChildIdxs.Num() <= currentSettings->MaxChildPerLeafBranch && (!branch.IsRoot || !currentSettings->IgnoreRootBranches) && branch.CurrentIdx > currentSettings->IgnoreAmountBranchesFromBottom)
 		{
 			currentTreeSkeleton.LeafBranches.Add(branch.CurrentIdx);
 		}

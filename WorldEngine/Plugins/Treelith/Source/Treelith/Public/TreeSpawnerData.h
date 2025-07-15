@@ -65,6 +65,9 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Tree|Skeleton Generation|Root", meta = (ToolTip = "Maximum length of the root branch"))
 	float MaxRootLength{ 50.f };
 
+	UPROPERTY(EditAnywhere, Category = "Tree|Skeleton Generation|Root", meta = (ToolTip = "Maximum amount of trunk branches"))
+	int MaxTrunkBranches{ 2 };
+
 	//Branch Skeleton Generation
 	UPROPERTY(EditAnywhere, Category = "Tree|Skeleton Generation|Branches", meta = (ToolTip = "Boundaries in which the branches of this tree grow. Used in the randomization function"))
 	FBoundary3 RandomBranchBoundaries{};
@@ -111,6 +114,9 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Leaves|Skeleton Generation", meta = (ToolTip = "Sets the maximum children a branch is allowed to have before leaves grow on it"))
 	int MaxChildPerLeafBranch{ 0 };
+
+	UPROPERTY(EditAnywhere, Category = "Leaves|Skeleton Generation", meta = (ToolTip = "Ignore root branches for leaf generation"))
+	bool IgnoreRootBranches{ true };
 
 	UPROPERTY(EditAnywhere, Category = "Leaves|Skeleton Generation", meta = (ToolTip = "Number of branches counted from the root where no leaves will grow, even if other conditions match. Based on branch ID"))
 	int IgnoreAmountBranchesFromBottom{ 2 };

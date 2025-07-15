@@ -89,6 +89,8 @@ struct TREELITH_API FTreeBranch
 
 	float BranchLength{ 100.f };
 
+	bool IsRoot{ false };
+
 	bool ShouldCreateNext{ false };
 
 	int ParentVertexStart{ -1 };
@@ -125,7 +127,9 @@ struct TREELITH_API FTreeSkeleton
 	UPROPERTY(EditAnywhere)
 	float MaxHeight{ FLT_MAX };
 
-	inline float GetNormalizedHeight(float zPos);
+	float MaxBranchLevel{};
 
+	FORCEINLINE float GetNormalizedHeight(float zPos);
+	FORCEINLINE float GetNormalizedBranchLevel(float level);
 };
 
