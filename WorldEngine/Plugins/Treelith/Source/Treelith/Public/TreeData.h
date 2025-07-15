@@ -101,7 +101,7 @@ struct TREELITH_API FTreeBranch
 
 	FTreeBranch(int currentIdx, int parentIdx, float currentBranchLength, const FVector& position, const FVector& direction, int branchShapeIdx);
 
-	void Next(TArray<FTreeBranch>& branchList, float nextBranchLength, int nextIdx, int branchShapeIdx);
+	FORCEINLINE FTreeBranch Next(float nextBranchLength, int nextIdx, int branchShapeIdx);
 
 	void CalculateUVOffset(float uvLength, float uvOffset, float parentBranchLength);
 

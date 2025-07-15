@@ -21,7 +21,7 @@ FTreeBranch::FTreeBranch(int currentIdx, int parentIdx, float currentBranchLengt
 {
 }
 
-void FTreeBranch::Next(TArray<FTreeBranch>& branchList, float nextBranchLength, int nextIdx, int branchShapeIdx)
+FORCEINLINE FTreeBranch FTreeBranch::Next(float nextBranchLength, int nextIdx, int branchShapeIdx)
 {
 	NextDir.Normalize();
 	float dotAngle{ static_cast<float>(FVector::DotProduct(BranchDir, NextDir)) };
@@ -33,11 +33,12 @@ void FTreeBranch::Next(TArray<FTreeBranch>& branchList, float nextBranchLength, 
 	FVector nextPos = Position + NextDir * BranchLength;
 
 	FTreeBranch nextBranch{nextIdx, CurrentIdx, nextBranchLength, nextPos, NextDir, branchShapeIdx};
-	branchList.Emplace(nextBranch);
 	ChildIdxs.Add(nextIdx);
 
 	NextDir = BranchDir;
 	ShouldCreateNext = false;
+
+	return nextBranch;
 }
 
 void FTreeBranch::CalculateUVOffset(float uvLength, float uvOffset, float parentBranchLength)

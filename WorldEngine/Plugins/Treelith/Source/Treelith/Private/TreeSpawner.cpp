@@ -135,10 +135,13 @@ void ATreeSpawner::GenerateTreeSkeleton(const FTreeSettings& currentSettings, FT
 		}
 		if (!foundLeaf)
 		{
+			auto& branch{ currentTreeSkeleton.Branches[currentBranchIdx] };
 			branchRadiusOffsetIdx = spawnerData->BranchShapes.Num() > 0 ? Seed.RandRange(0, spawnerData->BranchShapes.Num() - 1) : -1;
-			currentBranches[currentBranchIdx].Next(currentBranches, Seed.FRandRange(spawnerData->MinBranchLength, spawnerData->MaxBranchLength), currentBranches.Num(), Seed.RandRange(0, spawnerData->BranchShapes.Num() - 1));
-			currentBranchIdx = currentBranches.Num() - 1;
-			currentTreeSkeleton.MinHeight = (currentBranches[currentBranchIdx].Position.Z - root.Position.Z) / 2.f;
+			FTreeBranch nextBranch{ branch.Next(Seed.FRandRange(spawnerData->MinBranchLength, spawnerData->MaxBranchLength), currentBranches.Num(), Seed.RandRange(0, spawnerData->BranchShapes.Num() - 1)) };
+			currentBranchIdx = nextBranch.CurrentIdx;
+			currentTreeSkeleton.MinHeight = (nextBranch.Position.Z - root.Position.Z) / 2.f;
+
+			currentTreeSkeleton.Branches.Emplace(nextBranch);
 		}
 	}
 
@@ -200,8 +203,9 @@ void ATreeSpawner::GrowTreeSkeleton(const UTreeSpawnerData* currentSettings, FTr
 		if (branch.ShouldCreateNext)
 		{
 			int branchRadiusOffsetIdx{ currentSettings->BranchShapes.Num() > 0 ? Seed.RandRange(0, currentSettings->BranchShapes.Num() - 1) : -1 };
-			branch.Next(currentTreeSkeleton.Branches, Seed.FRandRange(currentSettings->MinBranchLength, currentSettings->MaxBranchLength), currentTreeSkeleton.Branches.Num(), branchRadiusOffsetIdx);
-			UpdateTreeHeightMinMax(currentTreeSkeleton, currentTreeSkeleton.Branches[currentTreeSkeleton.Branches.Num() - 1].Position.Z);
+			FTreeBranch nextBranch = branch.Next(Seed.FRandRange(currentSettings->MinBranchLength, currentSettings->MaxBranchLength), currentTreeSkeleton.Branches.Num(), branchRadiusOffsetIdx);
+			currentTreeSkeleton.Branches.Emplace(nextBranch);
+			UpdateTreeHeightMinMax(currentTreeSkeleton, nextBranch.Position.Z);
 		}
 	}
 
