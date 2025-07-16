@@ -35,6 +35,14 @@ enum class ETreeRandomType : uint8
 	OAK
 };
 
+
+enum class EBranchType : uint8
+{
+	ROOT,
+	TRUNK,
+	BRANCH
+};
+
 USTRUCT(BlueprintType, Blueprintable)
 struct TREELITH_API FBoundary3
 {
@@ -87,9 +95,11 @@ struct TREELITH_API FTreeBranch
 	UPROPERTY(EditAnywhere)
 	float BranchSize{ 0.f };
 
+	int BranchLevel{};
+
 	float BranchLength{ 100.f };
 
-	bool IsRoot{ false };
+	EBranchType BranchType{ EBranchType::ROOT };
 
 	bool ShouldCreateNext{ false };
 
@@ -129,7 +139,7 @@ struct TREELITH_API FTreeSkeleton
 
 	float MaxBranchLevel{};
 
-	FORCEINLINE float GetNormalizedHeight(float zPos);
-	FORCEINLINE float GetNormalizedBranchLevel(float level);
+	FORCEINLINE float GetNormalizedHeight(float zPos) const;
+	FORCEINLINE float GetNormalizedBranchLevel(float level) const;
 };
 

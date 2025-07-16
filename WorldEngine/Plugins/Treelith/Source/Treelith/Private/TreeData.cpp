@@ -55,12 +55,12 @@ void FTreeBranch::AddDirection(const FVector& newDir)
 	ShouldCreateNext = true;
 }
 
-FORCEINLINE float FTreeSkeleton::GetNormalizedHeight(float zPos)
+FORCEINLINE float FTreeSkeleton::GetNormalizedHeight(float zPos) const
 {
 	return FMath::Clamp((zPos - MinHeight) / (MaxHeight - MinHeight), 0.f, FLT_MAX);
 }
 
-FORCEINLINE float FTreeSkeleton::GetNormalizedBranchLevel(float level)
+FORCEINLINE float FTreeSkeleton::GetNormalizedBranchLevel(float level) const
 {
 	return level / MaxBranchLevel;
 }

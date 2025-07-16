@@ -49,11 +49,15 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Tree|Skeleton Generation|General", meta = (ToolTip = "Amount of times the growth algorithm will be executed on this tree"))
 	int GrowIterations{ 8 };
 
-	UPROPERTY(EditAnywhere, Category = "Tree|Skeleton Generation|General", meta = (ToolTip = "Minimal branch radius for this tree"))
-	float MinBranchRadius{ 6.f };
+	UPROPERTY(EditAnywhere, Category = "Tree|Skeleton Generation|Root", meta = (ToolTip = "Maximum amount of trunk branches"))
+	int MaxTrunkBranches{ 2 };
 
-	UPROPERTY(EditAnywhere, Category = "Tree|Skeleton Generation|General", meta = (ToolTip = "Stepsize to increase the branchradius with"))
-	float BranchAddRadius{ 2.f };
+	UPROPERTY(EditAnywhere, Category = "Tree|Skeleton Generation|General", meta = (ToolTip = "Curve between 0-1 that shows the shape of the tree"))
+	UCurveFloat* TreeShapeCurve{};
+
+	UPROPERTY(EditAnywhere, Category = "Tree|Skeleton Generation|General", meta = (ToolTip = "Shape Curve multiplier"))
+	float TreeShapeCurveMultiplier{4.f};
+
 
 	//Root Skeleton Generation
 	UPROPERTY(EditAnywhere, Category = "Tree|Skeleton Generation|Root", meta = (ToolTip = "Boundaries in which the roots of this tree grow. Used in the randomization function"))
@@ -65,8 +69,12 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Tree|Skeleton Generation|Root", meta = (ToolTip = "Maximum length of the root branch"))
 	float MaxRootLength{ 50.f };
 
-	UPROPERTY(EditAnywhere, Category = "Tree|Skeleton Generation|Root", meta = (ToolTip = "Maximum amount of trunk branches"))
-	int MaxTrunkBranches{ 2 };
+
+	UPROPERTY(EditAnywhere, Category = "Tree|Skeleton Generation|General", meta = (ToolTip = "Curve between 0-1 that shows the shape of the root"))
+	UCurveFloat* RootShapeCurve{};
+
+	UPROPERTY(EditAnywhere, Category = "Tree|Skeleton Generation|General", meta = (ToolTip = "Shape Curve multiplier"))
+	float RootShapeCurveMultiplier{4.f};
 
 	//Branch Skeleton Generation
 	UPROPERTY(EditAnywhere, Category = "Tree|Skeleton Generation|Branches", meta = (ToolTip = "Boundaries in which the branches of this tree grow. Used in the randomization function"))
@@ -129,6 +137,12 @@ public:
 	
 	UPROPERTY(EditAnywhere, Category = "Leaves|Mesh Generation", meta = (ToolTip = "Sets the leafcards the algorithm can pick"))
 	TArray<ULeafCardTemplate*> LeafCardTemplates;
+
+	UPROPERTY(EditAnywhere, Category = "Leaves|Mesh Generation", meta = (ToolTip = "Curve between 0-1 that shows the shape of the leaves"))
+	UCurveFloat* LeavesShapeCurve{};
+
+	UPROPERTY(EditAnywhere, Category = "Leaves|Mesh Generation", meta = (ToolTip = "size multiplier"))
+	float LeavesShapeCurveMultiplier{ 4.f };
 };
 
 USTRUCT(BlueprintType, Blueprintable)
