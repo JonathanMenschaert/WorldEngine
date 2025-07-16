@@ -463,6 +463,7 @@ void ATreeSpawner::GenerateEndBranchLeaves(const UTreeSpawnerData* currentSettin
 	for (int i{}; i < endBranches.Num(); ++i)
 	{
 		const FTreeBranch& branch{ currentTreeSkeleton.Branches[endBranches[i]] };
+		const FTreeBranch& parentBranch{ currentTreeSkeleton.Branches[branch.ParentIdx] };
 		FVector branchRight{ FVector::CrossProduct(FVector::UpVector, branch.BranchDir) };
 		branchRight.Normalize();
 
@@ -471,7 +472,7 @@ void ATreeSpawner::GenerateEndBranchLeaves(const UTreeSpawnerData* currentSettin
 			const ULeafCardTemplate* leafCardTemplate{ leafCardTemplates[Seed.RandRange(0, leafCardTemplates.Num() - 1)] };
 			float rollRotValue{ static_cast<float>(Seed.FRandRange(leafRotations.MinMaxX.X, leafRotations.MinMaxX.Y)) };
 
-			//Calculate yaw values 
+			//Calculate rotation values 
 			FVector signVector{ FVector::CrossProduct(FVector::RightVector, branchRight).GetSafeNormal() };
 			float dotValue{ static_cast<float>(FVector::DotProduct(FVector::UpVector, signVector)) };
 			float signValue{ dotValue >= 0.f ? 1.f : -1.f };
@@ -480,6 +481,7 @@ void ATreeSpawner::GenerateEndBranchLeaves(const UTreeSpawnerData* currentSettin
 
 			float pitchRotValue{ static_cast<float>(Seed.FRandRange(leafRotations.MinMaxY.X, leafRotations.MinMaxY.Y)) };
 
+			//Rotators
 			FQuat leafRollRotator{ FVector::ForwardVector, rollRotValue };
 			FQuat leafYawRotator{ FVector::UpVector, yawDiffValue * signValue + yawRotValue };
 			FQuat leafPitchRotator{ FVector::RightVector, pitchRotValue };
@@ -488,9 +490,11 @@ void ATreeSpawner::GenerateEndBranchLeaves(const UTreeSpawnerData* currentSettin
 
 			int vertOffset{ Vertices.Num() };
 
+			float leafSizeValue{ leafShapeMultiplier * leafShape->GetFloatValue(currentTreeSkeleton.GetNormalizedBranchLevel(branch.BranchLevel)) };
+			float spreadPercentage{ static_cast<float>(Seed.FRandRange(0.f, currentSettings->LeavesSpreadPercentage)) };
 			for (const FVector& leafVertex : leafCardTemplate->Vertices)
-			{			
-				Vertices.Add(leafRotator.RotateVector((leafVertex + currentSettings->LeafCardZeroPoint) * leafShapeMultiplier * leafShape->GetFloatValue(currentTreeSkeleton.GetNormalizedBranchLevel(branch.BranchLevel))) + branch.Position);
+			{							
+				Vertices.Add(leafRotator.RotateVector(leafVertex + currentSettings->LeafCardZeroPoint) * leafSizeValue + branch.Position + -parentBranch.BranchDir * parentBranch.BranchLength * spreadPercentage);
 			}
 
 			VertexColors.Append(leafCardTemplate->VertexColors);

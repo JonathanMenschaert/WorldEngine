@@ -129,6 +129,9 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Leaves|Skeleton Generation", meta = (ToolTip = "Number of branches counted from the root where no leaves will grow, even if other conditions match. Based on branch ID"))
 	int IgnoreAmountBranchesFromBottom{ 2 };
 
+	UPROPERTY(EditAnywhere, Category = "Leaves|Skeleton Generation", meta = (ToolTip = "Spread percentage over the leaf branch"))
+	float LeavesSpreadPercentage{ 0.f };
+
 	UPROPERTY(EditAnywhere, Category = "Leaves|Mesh Generation", meta = (ToolTip = "Offsets the leafcard by the Zeropoint coordinates"))
 	FVector LeafCardZeroPoint{ 0.f, 0.f, 0.f };
 
@@ -141,7 +144,7 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Leaves|Mesh Generation", meta = (ToolTip = "Curve between 0-1 that shows the shape of the leaves"))
 	UCurveFloat* LeavesShapeCurve{};
 
-	UPROPERTY(EditAnywhere, Category = "Leaves|Mesh Generation", meta = (ToolTip = "size multiplier"))
+	UPROPERTY(EditAnywhere, Category = "Leaves|Mesh Generation", meta = (ToolTip = "Size multiplier"))
 	float LeavesShapeCurveMultiplier{ 4.f };
 };
 
