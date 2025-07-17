@@ -111,7 +111,7 @@ void ATreeSpawner::GenerateTreeSkeleton(const FTreeSettings& currentSettings, FT
 	currentTreeSkeleton.MaxHeight = root.Position.Z;
 
 	//Grab correct randomizer function from the registry and update root
-	auto& randomizeBranchLeaf = UTreeFunctionRegistry::GetTreeRandomizationFunction(spawnerData->RandomType);
+	auto& randomizeBranchLeaf = UTreeFunctionRegistry::GetTreeRandomizationFunction(spawnerData->RandomTypeBranches);
 	randomizeBranchLeaf(Seed, BranchDestinations, spawnerData->RandomBranchBoundaries, currentSettings.Position, spawnerData->BranchDestinationAmount);
 	root.NextDir = root.BranchDir;
 

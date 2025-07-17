@@ -39,9 +39,10 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Tree|Material", meta = (ToolTip = "Select the material slot this tree is going to use in the material instance"))
 	EMaterialSlot TreeMaterialSlot{ EMaterialSlot::SLOT1 };
 
+	UPROPERTY(EditAnywhere, Category = "Tree|Material", meta = (ToolTip = "Select the material slot the endbranches are going to use in the material instance"))
+	EMaterialSlot EndBranchMaterialSlot{ EMaterialSlot::SLOT2 };
+
 	//General Skeleton Generation
-	UPROPERTY(EditAnywhere, Category = "Tree|Skeleton Generation|General", meta = (ToolTip = "Selects the randomization function to generate branch destination points"))
-	ETreeRandomType RandomType{ ETreeRandomType::DEFAULT };
 
 	UPROPERTY(EditAnywhere, Category = "Tree|Skeleton Generation|General", meta = (ToolTip = "Amount of sides the tree should have"))
 	int NumSides{ 4 };
@@ -49,17 +50,11 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Tree|Skeleton Generation|General", meta = (ToolTip = "Amount of times the growth algorithm will be executed on this tree"))
 	int GrowIterations{ 8 };
 
-	UPROPERTY(EditAnywhere, Category = "Tree|Skeleton Generation|Root", meta = (ToolTip = "Maximum amount of trunk branches"))
-	int MaxTrunkBranches{ 2 };
-
-	UPROPERTY(EditAnywhere, Category = "Tree|Skeleton Generation|General", meta = (ToolTip = "Curve between 0-1 that shows the shape of the tree"))
-	UCurveFloat* TreeShapeCurve{};
-
-	UPROPERTY(EditAnywhere, Category = "Tree|Skeleton Generation|General", meta = (ToolTip = "Shape Curve multiplier"))
-	float TreeShapeCurveMultiplier{4.f};
-
 
 	//Root Skeleton Generation
+	UPROPERTY(EditAnywhere, Category = "Tree|Skeleton Generation|Root", meta = (ToolTip = "Selects the randomization function to generate branch destination points"))
+	ETreeRandomType RandomTypeRoot { ETreeRandomType::DEFAULT };
+
 	UPROPERTY(EditAnywhere, Category = "Tree|Skeleton Generation|Root", meta = (ToolTip = "Boundaries in which the roots of this tree grow. Used in the randomization function"))
 	FBoundary3 RandomRootBoundaries{};
 
@@ -69,14 +64,28 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Tree|Skeleton Generation|Root", meta = (ToolTip = "Maximum length of the root branch"))
 	float MaxRootLength{ 50.f };
 
-
-	UPROPERTY(EditAnywhere, Category = "Tree|Skeleton Generation|General", meta = (ToolTip = "Curve between 0-1 that shows the shape of the root"))
+	UPROPERTY(EditAnywhere, Category = "Tree|Skeleton Generation|Root", meta = (ToolTip = "Curve between 0-1 that shows the shape of the root"))
 	UCurveFloat* RootShapeCurve{};
 
-	UPROPERTY(EditAnywhere, Category = "Tree|Skeleton Generation|General", meta = (ToolTip = "Shape Curve multiplier"))
+	UPROPERTY(EditAnywhere, Category = "Tree|Skeleton Generation|Root", meta = (ToolTip = "Shape Curve multiplier"))
 	float RootShapeCurveMultiplier{4.f};
 
+
+	//Trunk Skeleton Generation
+	UPROPERTY(EditAnywhere, Category = "Tree|Skeleton Generation|Trunk", meta = (ToolTip = "Curve between 0-1 that shows the shape of the tree"))
+	UCurveFloat* TreeShapeCurve{};
+
+	UPROPERTY(EditAnywhere, Category = "Tree|Skeleton Generation|Trunk", meta = (ToolTip = "Shape Curve multiplier"))
+	float TreeShapeCurveMultiplier{4.f};
+
+	UPROPERTY(EditAnywhere, Category = "Tree|Skeleton Generation|Trunk", meta = (ToolTip = "Maximum amount of trunk branches"))
+	int MaxTrunkBranches{ 2 };
+
+
 	//Branch Skeleton Generation
+	UPROPERTY(EditAnywhere, Category = "Tree|Skeleton Generation|Branches", meta = (ToolTip = "Selects the randomization function to generate branch destination points"))
+	ETreeRandomType RandomTypeBranches{ ETreeRandomType::DEFAULT };
+
 	UPROPERTY(EditAnywhere, Category = "Tree|Skeleton Generation|Branches", meta = (ToolTip = "Boundaries in which the branches of this tree grow. Used in the randomization function"))
 	FBoundary3 RandomBranchBoundaries{};
 
@@ -94,6 +103,7 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Tree|Skeleton Generation|Branches", meta = (ToolTip = "Maximum detection distance to a destination point"))
 	float MaxLeafDistance{ 250 };
+
 	 
 	//Branch Mesh Generation
 	UPROPERTY(EditAnywhere, Category = "Tree|Mesh Generation", meta = (ToolTip = "Sets the length of a branch that maps to the 0-1 coordinates of the UV map"))
@@ -115,6 +125,7 @@ public:
 	//Leaf Material Slot
 	UPROPERTY(EditAnywhere, Category="Leaves|Material", meta = (ToolTip = "Select the material slot the leaves are going to use in the material instance"))
 	EMaterialSlot LeafMaterialSlot{ EMaterialSlot::SLOT1 };
+
 
 	//Leaf Skeleton Generation
 	UPROPERTY(EditAnywhere, Category = "Leaves|Skeleton Generation", meta = (ToolTip = "Sets the number of leaf cards per branch"))
